@@ -1,36 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Job Shop</title>
-
-</head>
-<body>
-    <div class="hero">
-        <h1>Resolución del Problema Local Job Shop</h1>
-
-    </div>
-    <div class="container">
-        <div id="input-form">
-            <br><label for="x1">Nivel de empleados en Verano (x1):</label>
-            <input type="number" id="x1" class="input-field" value="247.5">
-            <br><label for="x2">Nivel de empleados en Otoño (x2):</label>
-            <input type="number" id="x2" class="input-field" value="245">
-            <br><label for="x3">Nivel de empleados en Invierno (x3):</label>
-            <input type="number" id="x3" class="input-field" value="247.5">
-            <br><label for="x4">Nivel de empleados en Primavera (x4):</label>
-            <input type="number" id="x4" class="input-field" value="255">
-            <br><button onclick="calculateCost()">Calcular Costo Total</button>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+        <div class="hero text-center mb-4">
+            <h1>Resolución del Problema Local Job Shop</h1>
         </div>
-        <div id="output" class="result">
-            <p id="result-text"></p>
+
+        <div class="row justify-content-center">
+            <div id="input-form" class="col-12 col-md-6">
+                <div class="mb-3">
+                    <label for="x1" class="form-label">Nivel de empleados en Verano (x1):</label>
+                    <input type="number" id="x1" class="form-control" value="247.5" />
+                </div>
+                <div class="mb-3">
+                    <label for="x2" class="form-label">Nivel de empleados en Otoño (x2):</label>
+                    <input type="number" id="x2" class="form-control" value="245" />
+                </div>
+                <div class="mb-3">
+                    <label for="x3" class="form-label">Nivel de empleados en Invierno (x3):</label>
+                    <input type="number" id="x3" class="form-control" value="247.5" />
+                </div>
+                <div class="mb-3">
+                    <label for="x4" class="form-label">Nivel de empleados en Primavera (x4):</label>
+                    <input type="number" id="x4" class="form-control" value="255" />
+                </div>
+                <button class="btn btn-primary" onclick="calculateCost()">Calcular Costo Total</button>
+            </div>
+        </div>
+
+        <div id="output" class="mt-4">
+            <p id="result-text" class="result-text text-center"></p>
         </div>
     </div>
 
     <script>
         function calculateCost() {
-            // Cálculos de programación dinámica
             const x1 = parseFloat(document.getElementById('x1').value);
             const x2 = parseFloat(document.getElementById('x2').value);
             const x3 = parseFloat(document.getElementById('x3').value);
@@ -41,7 +56,6 @@
                 return;
             }
 
-            // Costos por cambio de nivel y contratación/despido
             const r1 = 220, r2 = 240, r3 = 200, r4 = 255;
             const cost1 = 200 * Math.pow(x1 - 255, 2) + 2000 * Math.abs(x1 - r1);
             const cost2 = 200 * Math.pow(x2 - x1, 2) + 2000 * Math.abs(x2 - r2);
@@ -50,9 +64,8 @@
 
             const totalCost = cost1 + cost2 + cost3 + cost4;
 
-            // Mostrar resultado
             document.getElementById('result-text').innerText = `Costo total estimado: $${totalCost.toFixed(2)}`;
         }
     </script>
-</body>
+  </body>
 </html>

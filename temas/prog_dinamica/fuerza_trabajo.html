@@ -1,36 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Optimización de Trabajadores</title>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    
-    <div class="hero">
-        <h1>Optimización de Trabajadores</h1>
+    <div class="container mt-5">
+        <div class="hero text-center">
+            <h1>Optimización de Trabajadores</h1>
+        </div>
+
+        <form id="workerForm">
+            <div class="mb-3">
+                <label for="weeks" class="form-label">Número de semanas:</label>
+                <input type="number" id="weeks" class="form-control" min="1" required><br>
+            </div>
+            <div id="requirements"></div>
+
+            <div class="mb-3">
+                <label for="c1" class="form-label">Costo por exceso (C1):</label>
+                <input type="number" id="c1" class="form-control" min="0" required><br>
+            </div>
+
+            <div class="mb-3">
+                <label for="c2Base" class="form-label">Costo fijo de contratación (C2 base):</label>
+                <input type="number" id="c2Base" class="form-control" min="0" required><br>
+            </div>
+
+            <div class="mb-3">
+                <label for="c2Var" class="form-label">Costo variable de contratación (C2 variable):</label>
+                <input type="number" id="c2Var" class="form-control" min="0" required><br>
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="calculateOptimization()">Calcular</button>
+        </form>
+
+        <h2 class="mt-4">Resultados</h2>
+        <div id="results"></div>
     </div>
-    <form id="workerForm">
-        <label for="weeks">Número de semanas:</label>
-        <input type="number" id="weeks" min="1" required><br>
-        
-        <div id="requirements"></div>
-        
-        <label for="c1">Costo por exceso (C1):</label>
-        <input type="number" id="c1" min="0" required><br>
-        
-        <label for="c2Base">Costo fijo de contratación (C2 base):</label>
-        <input type="number" id="c2Base" min="0" required><br>
-        
-        <label for="c2Var">Costo variable de contratación (C2 variable):</label>
-        <input type="number" id="c2Var" min="0" required><br>
-        
-        <button type="button" onclick="calculateOptimization()">Calcular</button>
-    </form>
-    
-    <h2>Resultados</h2>
-    <div id="results"></div>
 
     <script>
         const maxWorkers = 10;
@@ -42,8 +56,10 @@
 
             for (let i = 1; i <= weeks; i++) {
                 requirementsDiv.innerHTML += `
-                    <label for="req${i}">Requerimientos para la semana ${i}:</label>
-                    <input type="number" id="req${i}" min="0" required><br>
+                    <div class="mb-3">
+                        <label for="req${i}" class="form-label">Requerimientos para la semana ${i}:</label>
+                        <input type="number" id="req${i}" class="form-control" min="0" required><br>
+                    </div>
                 `;
             }
         }
@@ -61,16 +77,13 @@
             const c2Base = parseInt(document.getElementById("c2Base").value);
             const c2Var = parseInt(document.getElementById("c2Var").value);
 
-            // Initialize DP table and path
             const dp = Array.from({ length: weeks + 1 }, () => Array(maxWorkers + 1).fill(Infinity));
             const path = Array.from({ length: weeks + 1 }, () => Array(maxWorkers + 1).fill(-1));
 
-            // Initialize DP table
             for (let x = 0; x <= maxWorkers; x++) {
                 dp[weeks][x] = 0;
             }
 
-            // Fill DP table
             for (let i = weeks - 1; i >= 0; i--) {
                 for (let xPrev = 0; xPrev <= maxWorkers; xPrev++) {
                     for (let xCurr = b[i]; xCurr <= maxWorkers; xCurr++) {
@@ -86,7 +99,6 @@
                 }
             }
 
-            // Retrieve optimal assignment
             let currentWorkers = 0;
             const optimalAssignment = [];
             for (let i = 0; i < weeks; i++) {
@@ -94,13 +106,12 @@
                 optimalAssignment.push(currentWorkers);
             }
 
-            // Display results
             const resultsDiv = document.getElementById("results");
-            resultsDiv.innerHTML = "<strong>La solución óptima es:</strong><br>";
+            resultsDiv.innerHTML = `<h3 class="result-text">La solución óptima es:</h3>`;
             optimalAssignment.forEach((workers, i) => {
-                resultsDiv.innerHTML += `Semana ${i + 1}: ${workers} trabajadores<br>`;
+                resultsDiv.innerHTML += `<p>Semana ${i + 1}: ${workers} trabajadores</p>`;
             });
-            resultsDiv.innerHTML += `<strong>Costo total:</strong> $${dp[0][0].toFixed(2)}`;
+            resultsDiv.innerHTML += `<h3 class="result-text">Costo total:</h3> $${dp[0][0].toFixed(2)}`;
         }
     </script>
 </body>

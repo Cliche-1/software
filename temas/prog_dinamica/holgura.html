@@ -1,57 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hit-and-Miss Manufacturing Company Calculator</title>
+    <title>Determinación de Holgura</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
   </head>
   <body>
-    <div class="hero">
-      <h1>Determinacion De Holgura</h1>
-  </div>
-    <div class="container">
+    <br>
+    <br>
+    <div class>
+        <h1 class="text-center">Determinación de Holgura</h1>
+    </div>
+    <div class="container mt-5">
+      <div class="row">
+        <div class="col-12 col-md-6 offset-md-3">
+          <div class="card shadow-sm p-4">
+            <div class="form-group mb-3">
+              <label for="maxLotSize" class="form-label">Tamaño máximo del lote:</label>
+              <input type="number" id="maxLotSize" value="5" class="form-control" />
+            </div>
+            <div class="form-group mb-3">
+              <label for="maxRuns" class="form-label">Máximo de corridas:</label>
+              <input type="number" id="maxRuns" value="3" class="form-control" />
+            </div>
+            <div class="form-group mb-3">
+              <label for="successProb" class="form-label">Probabilidad de éxito por unidad:</label>
+              <input
+                type="number"
+                id="successProb"
+                value="0.5"
+                step="0.01"
+                min="0"
+                max="1"
+                class="form-control"
+              />
+            </div>
+            <div class="form-group mb-3">
+              <label for="fixedCost" class="form-label">Costo fijo por corrida ($):</label>
+              <input type="number" id="fixedCost" value="300" class="form-control" />
+            </div>
+            <div class="form-group mb-3">
+              <label for="variableCost" class="form-label">Costo variable por unidad ($):</label>
+              <input type="number" id="variableCost" value="100" class="form-control" />
+            </div>
+            <div class="form-group mb-3">
+              <label for="failureCost" class="form-label">Costo por falla ($):</label>
+              <input type="number" id="failureCost" value="1600" class="form-control" />
+            </div>
+            <div class="form-group mb-3" hidden>
+              <label for="epsilon" class="form-label">Tolerancia: </label>
+              <input type="number" id="epsilon" value="0.01" step="0.001" class="form-control" />
+            </div>
+            <button onclick="handleCalculate()" class="btn btn-primary w-100">Calcular</button>
+          </div>
+        </div>
+      </div>
 
-      <div class="form-group">
-        <label for="maxLotSize">Tamaño máximo del lote:</label>
-        <input type="number" id="maxLotSize" value="5" />
-      </div>
-      <div class="form-group">
-        <label for="maxRuns">Máximo de corridas:</label>
-        <input type="number" id="maxRuns" value="3" />
-      </div>
-      <div class="form-group">
-        <label for="successProb">Probabilidad de éxito por unidad:</label>
-        <input
-          type="number"
-          id="successProb"
-          value="0.5"
-          step="0.01"
-          min="0"
-          max="1"
-        />
-      </div>
-      <div class="form-group">
-        <label for="fixedCost">Costo fijo por corrida ($):</label>
-        <input type="number" id="fixedCost" value="300" />
-      </div>
-      <div class="form-group">
-        <label for="variableCost">Costo variable por unidad ($):</label>
-        <input type="number" id="variableCost" value="100" />
-      </div>
-      <div class="form-group">
-        <label for="failureCost">Costo por falla ($):</label>
-        <input type="number" id="failureCost" value="1600" />
-      </div>
-      <div class="form-group" hidden>
-        <label for="epsilon">Tolerancia: </label>
-        <input type="number" id="epsilon" value="0.01" step="0.001" />
-      </div>
-      <button onclick="handleCalculate()">Calcular</button>
-      <div id="results"></div>
+      <div id="results" class="mt-5"></div>
     </div>
 
     <script>
@@ -191,26 +204,30 @@
       }
 
       function displayResults(policy, expectedCosts, iterations) {
-        let resultsHtml = `
+        let resultsHtml = `  
                 <h2>Resultados</h2>
                 <h3>Resultado Final:</h3>
-                <table>
-                    <tr>
-                        <th>Corridas</th>
-                        <th>Tamaño del Lote</th>
-                        <th>Costo Esperado</th>
-                    </tr>
-                    ${Object.entries(policy)
-                      .map(
-                        ([state, action]) => `
+                <table class="table table-bordered">
+                    <thead>
                         <tr>
-                            <td>${state}</td>
-                            <td>${action}</td>
-                            <td>$${expectedCosts[state].toFixed(2)}</td>
+                            <th>Corridas</th>
+                            <th>Tamaño del Lote</th>
+                            <th>Costo Esperado</th>
                         </tr>
-                    `
-                      )
-                      .join('')}
+                    </thead>
+                    <tbody>
+                        ${Object.entries(policy)
+                          .map(
+                            ([state, action]) => `
+                            <tr>
+                                <td>${state}</td>
+                                <td>${action}</td>
+                                <td>$${expectedCosts[state].toFixed(2)}</td>
+                            </tr>
+                        `
+                          )
+                          .join('')}
+                    </tbody>
                 </table>
                 <h3>Iteraciones:</h3>
             `;
@@ -218,23 +235,27 @@
         iterations.forEach((iteration, index) => {
           resultsHtml += `
                     <h4>Iteración ${index + 1}</h4>
-                    <table>
-                        <tr>
-                            <th>Corridas</th>
-                            <th>Tamaño del Lote</th>
-                            <th>Costo Esperado</th>
-                        </tr>
-                        ${Object.entries(iteration.policy)
-                          .map(
-                            ([state, action]) => `
+                    <table class="table table-bordered">
+                        <thead>
                             <tr>
-                                <td>${state}</td>
-                                <td>${action}</td>
-                                <td>$${iteration.V[state].toFixed(2)}</td>
+                                <th>Corridas</th>
+                                <th>Tamaño del Lote</th>
+                                <th>Costo Esperado</th>
                             </tr>
-                        `
-                          )
-                          .join('')}
+                        </thead>
+                        <tbody>
+                            ${Object.entries(iteration.policy)
+                              .map(
+                                ([state, action]) => `
+                                <tr>
+                                    <td>${state}</td>
+                                    <td>${action}</td>
+                                    <td>$${iteration.V[state].toFixed(2)}</td>
+                                </tr>
+                            `
+                              )
+                              .join('')}
+                        </tbody>
                     </table>
                 `;
         });

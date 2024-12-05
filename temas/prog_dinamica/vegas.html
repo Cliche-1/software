@@ -4,96 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Juego de Apuestas</title>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e7f3fe;
+            border-left: 6px solid #2196F3;
+        }
+    </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>Juego de Apuestas</h1>
-    </div>
+    <br>
+    <br>
     <div class="container">
-        <form id="apuestaForm">
-            <br><label for="fichas_iniciales">Fichas iniciales:</label>
-            <input type="number" id="fichas_iniciales" min="1" value="3" required>
-
-            <br><label for="jugadas">Número de jugadas:</label>
-            <input type="number" id="jugadas" min="1" value="3" required>
-
-            <br><label for="prob_ganar">Probabilidad de ganar (entre 0 y 1):</label>
-            <input type="number" id="prob_ganar" min="0" max="1" step="0.01" value="0.67" required>
-
-            <button type="button" onclick="calcularPolitica()">Calcular</button>
+        <h1 class="mb-4">Juego de Apuestas</h1>
+        <form id="formApuestas">
+            <div class="mb-3">
+                <label for="fichas_iniciales" class="form-label">Fichas iniciales:</label>
+                <input type="number" id="fichas_iniciales" class="form-control" required min="1" value="3">
+            </div>
+            <div class="mb-3">
+                <label for="jugadas" class="form-label">Número de jugadas:</label>
+                <input type="number" id="jugadas" class="form-control" required min="1" value="3">
+            </div>
+            <div class="mb-3">
+                <label for="prob_ganar" class="form-label">Probabilidad de ganar (entre 0 y 1):</label>
+                <input type="text" id="prob_ganar" class="form-control" required step="0.01" min="0" max="1" value="0.67">
+            </div>
+            <button type="submit" class="btn btn-primary">Calcular</button>
         </form>
-
-        <div id="resultado" class="result" style="display: none;">
-            <h2>Resultado</h2>
-            <p id="probOptima"></p>
-            <p id="politica"></p>
-        </div>
+        
+        <div id="resultado"></div>
     </div>
 
     <script>
-        function calcularPolitica() {
-    const fichasIniciales = parseInt(document.getElementById("fichas_iniciales").value);
-    const jugadas = parseInt(document.getElementById("jugadas").value);
-    const probGanar = parseFloat(document.getElementById("prob_ganar").value);
-
-    if (isNaN(fichasIniciales) || fichasIniciales < 1 || 
-        isNaN(jugadas) || jugadas < 1 || 
-        isNaN(probGanar) || probGanar < 0 || probGanar > 1) {
-        alert("Por favor, ingrese valores válidos.");
-        return;
-    }
-
-    const resultado = politicaOptima(fichasIniciales, jugadas, probGanar);
-    document.getElementById("probOptima").innerText = `Probabilidad óptima de ganar: ${resultado.probOptima.toFixed(4)}`;
-    document.getElementById("politica").innerText = `Política óptima de apuestas: ${resultado.politica.join(", ")}`;
-    document.getElementById("resultado").style.display = "block";
-}
-
-function politicaOptima(fichasIniciales, jugadas, probGanar) {
-    const dp = Array.from({ length: 9 }, () => Array(jugadas + 1).fill(0));
-
-    for (let i = 5; i < 9; i++) dp[i][0] = 1;
-
-    for (let jugada = 1; jugada <= jugadas; jugada++) {
-        for (let fichas = 0; fichas < 9; fichas++) {
-            let mejorProb = dp[fichas][jugada - 1];
-
-            for (let apuesta = 1; apuesta <= fichas; apuesta++) {
-                const probGanarJugada = probGanar * dp[Math.min(fichas + apuesta, 8)][jugada - 1] +
-                                        (1 - probGanar) * dp[Math.max(fichas - apuesta, 0)][jugada - 1];
-                mejorProb = Math.max(mejorProb, probGanarJugada);
+        function politicaOptima(fichasIniciales, jugadas, probGanar) {
+            const dp = Array.from({ length: 9 }, () => Array(4).fill(0));
+            for (let i = 5; i < 9; i++) dp[i][0] = 1;
+            
+            for (let jugada = 1; jugada < 4; jugada++) {
+                for (let fichas = 0; fichas < 9; fichas++) {
+                    let mejorProb = dp[fichas][jugada-1];
+                    
+                    for (let apuesta = 1; apuesta <= fichas; apuesta++) {
+                        const probGanarJugada = probGanar * dp[Math.min(fichas + apuesta, 8)][jugada-1] + 
+                                                (1 - probGanar) * dp[Math.max(fichas - apuesta, 0)][jugada-1];
+                        mejorProb = Math.max(mejorProb, probGanarJugada);
+                    }
+                    
+                    dp[fichas][jugada] = mejorProb;
+                }
             }
 
-            dp[fichas][jugada] = mejorProb;
-        }
-    }
-
-    let politica = [];
-    let fichas = fichasIniciales;
-    for (let jugada = jugadas; jugada > 0; jugada--) {
-        let mejorApuesta = 0;
-        let mejorProb = dp[fichas][jugada - 1];
-
-        for (let apuesta = 1; apuesta <= fichas; apuesta++) {
-            const probGanarJugada = probGanar * dp[Math.min(fichas + apuesta, 8)][jugada - 1] +
-                                    (1 - probGanar) * dp[Math.max(fichas - apuesta, 0)][jugada - 1];
-            if (probGanarJugada > mejorProb) {
-                mejorProb = probGanarJugada;
-                mejorApuesta = apuesta;
+            const politica = [];
+            let fichas = fichasIniciales;
+            for (let jugada = 3; jugada > 0; jugada--) {
+                let mejorApuesta = 0;
+                let mejorProb = dp[fichas][jugada-1];
+                
+                for (let apuesta = 1; apuesta <= fichas; apuesta++) {
+                    const probGanarJugada = probGanar * dp[Math.min(fichas + apuesta, 8)][jugada-1] + 
+                                             (1 - probGanar) * dp[Math.max(fichas - apuesta, 0)][jugada-1];
+                    if (probGanarJugada > mejorProb) {
+                        mejorProb = probGanarJugada;
+                        mejorApuesta = apuesta;
+                    }
+                }
+                
+                politica.push(mejorApuesta);
             }
+            
+            return [dp[fichasIniciales][3], politica.reverse()];
         }
 
-        politica.push(mejorApuesta);
-        fichas += probGanar > 0.5 ? mejorApuesta : -mejorApuesta; // Actualización aproximada
-    }
+        document.getElementById('formApuestas').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const fichasIniciales = parseInt(document.getElementById('fichas_iniciales').value);
+            const jugadas = parseInt(document.getElementById('jugadas').value);
+            const probGanar = parseFloat(document.getElementById('prob_ganar').value);
 
-    return {
-        probOptima: dp[fichasIniciales][jugadas],
-        politica: politica.reverse()
-    };
-}
+            if (fichasIniciales < 1 || jugadas < 1 || probGanar < 0 || probGanar > 1) {
+                alert('Por favor, ingrese valores válidos. Las fichas iniciales y jugadas deben ser mayores a 0, y la probabilidad de ganar debe estar entre 0 y 1.');
+                return;
+            }
 
+            const [probOptima, politica] = politicaOptima(fichasIniciales, jugadas, probGanar);
+            const resultado = `
+                <p><strong>Probabilidad óptima de ganar:</strong> ${probOptima.toFixed(4)}</p>
+                <p><strong>Política óptima de apuestas:</strong> ${politica.join(", ")}</p>
+            `;
+            document.getElementById('resultado').innerHTML = resultado;
+        });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
