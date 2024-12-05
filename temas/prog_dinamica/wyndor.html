@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Programación Lineal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Calculadora de Programación Lineal</h1>
+        <p class="lead">Maximizar la función Z = c1*x1 + c2*x2 bajo las siguientes restricciones:</p>
+        <ul class="mb-4">
+            <li>Restricción 1: a11*x1 + a12*x2 ≤ b1</li>
+            <li>Restricción 2: a21*x1 + a22*x2 ≤ b2</li>
+            <li>Restricción 3: x1 ≥ 0, x2 ≥ 0</li>
+        </ul>
+
+        <form id="formulario">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="c1" class="form-label">Coeficiente c1:</label>
+                    <input type="number" id="c1" class="form-control" value="3" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="c2" class="form-label">Coeficiente c2:</label>
+                    <input type="number" id="c2" class="form-control" value="5" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="a11" class="form-label">Coeficiente a11:</label>
+                    <input type="number" id="a11" class="form-control" value="1" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="a12" class="form-label">Coeficiente a12:</label>
+                    <input type="number" id="a12" class="form-control" value="0" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="b1" class="form-label">Valor b1:</label>
+                    <input type="number" id="b1" class="form-control" value="4" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="a21" class="form-label">Coeficiente a21:</label>
+                    <input type="number" id="a21" class="form-control" value="0" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="a22" class="form-label">Coeficiente a22:</label>
+                    <input type="number" id="a22" class="form-control" value="1" step="0.1" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="b2" class="form-label">Valor b2:</label>
+                    <input type="number" id="b2" class="form-control" value="6" step="0.1" required>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-primary" onclick="calcularOptimo()">Calcular Solución Óptima</button>
+            </div>
+        </form>
+
+        <div id="result" class="mt-4" style="display: none;"></div>
+    </div>
+
+    <script>
+        function calcularOptimo() {
+            const c1 = parseFloat(document.getElementById('c1').value);
+            const c2 = parseFloat(document.getElementById('c2').value);
+            const a11 = parseFloat(document.getElementById('a11').value);
+            const a12 = parseFloat(document.getElementById('a12').value);
+            const b1 = parseFloat(document.getElementById('b1').value);
+            const a21 = parseFloat(document.getElementById('a21').value);
+            const a22 = parseFloat(document.getElementById('a22').value);
+            const b2 = parseFloat(document.getElementById('b2').value);
+
+            // Calcular los puntos de intersección
+            const puntos = [
+                {x1: 0, x2: 0},
+                {x1: b1/a11, x2: 0},
+                {x1: 0, x2: b2/a22},
+                {x1: (b1*a22 - b2*a12) / (a11*a22 - a12*a21), x2: (b2*a11 - b1*a21) / (a11*a22 - a12*a21)}
+            ];
+
+            let maxZ = -Infinity;
+            let mejorPunto = null;
+
+            // Evaluar la función objetivo en cada punto
+            for (let punto of puntos) {
+                if (punto.x1 >= 0 && punto.x2 >= 0 && 
+                    a11*punto.x1 + a12*punto.x2 <= b1 && 
+                    a21*punto.x1 + a22*punto.x2 <= b2) {
+                    const z = c1*punto.x1 + c2*punto.x2;
+                    if (z > maxZ) {
+                        maxZ = z;
+                        mejorPunto = punto;
+                    }
+                }
+            }
+
+            // Mostrar el resultado
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            if (mejorPunto) {
+                resultDiv.innerHTML = `
+                    <h4 class="mb-3">Solución óptima:</h4>
+                    <p class="result-text">x1 = ${mejorPunto.x1.toFixed(2)}</p>
+                    <p class="result-text">x2 = ${mejorPunto.x2.toFixed(2)}</p>
+                    <p class="result-text">Z máximo = ${maxZ.toFixed(2)}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = "<p class='result-text'>No se encontró una solución factible.</p>";
+            }
+        }
+    </script>
+</body>
+</html>
