@@ -9,123 +9,122 @@
     <link href="assets/styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="hero">
-        <h1>Programación Geométrica</h1>
-    </div>
+
+  <div class="container mt-5">
+        <h1 class="mb-4">Programación Geométrica</h1>
+        </div>
     
     <div class="container">
-        <h1>Calculadora de Caja</h1>
-        <p>Seleccione una operación:</p>
+        <h1 class="section-title">Calculadora de Caja</h1>
+        <p class="section-text">Seleccione una operación:</p>
         <div class="options">
-            <button id="volumen-maximo-btn">Calcular Volumen Máximo</button>
-            <button id="area-minima-btn">Calcular Área Mínima</button>
+            <button class="btn btn-primary operation-btn" id="volumen-maximo-btn">Calcular Volumen Máximo</button>
+            <button class="btn btn-primary operation-btn" id="area-minima-btn">Calcular Área Mínima</button>
         </div>
-        <div id="inputs" style="display: none;">
-            <p id="input-label">Ingrese el valor:</p>
-            <input type="number" id="input-value" placeholder="Ingrese un valor" step="0.01" min="0">
-            <button id="calcular-btn">Calcular</button>
+        <div id="inputs" class="inputs-section" style="display: none;">
+            <p id="input-label" class="input-label">Ingrese el valor:</p>
+            <input type="number" id="input-value" class="form-control" placeholder="Ingrese un valor" step="0.01" min="0">
+            <button id="calcular-btn" class="btn btn-success calculate-btn">Calcular</button>
         </div>
-        <div id="resultado"></div>
+        <div id="resultado" class="result-section"></div>
     </div>
     <script>
     let currentOperation = null;
 
-        // Mostrar u ocultar el formulario de entrada
-        function mostrarFormulario(operacion) {
-          currentOperation = operacion;
-          const inputLabel = document.getElementById('input-label');
-          const inputsDiv = document.getElementById('inputs');
-          const resultadoDiv = document.getElementById('resultado');
-        
-          resultadoDiv.style.display = 'none'; // Ocultar resultados previos
-          inputsDiv.style.display = 'block';
-        
-          if (operacion === 'volumen') {
-            inputLabel.textContent = 'Ingrese el área fija de la caja (en m²):';
-          } else if (operacion === 'area') {
-            inputLabel.textContent = 'Ingrese el volumen deseado de la caja (en m³):';
-          }
-        }
-        
-        // Calcular el volumen máximo
-        function calcularVolumenMaximo(area) {
-          const x1 = Math.sqrt(area / 3.0);
-          const x2 = x1;
-          const x3 = x1 / 2;
-          const volumenOptimo = x1 * x2 * x3;
-        
-          return {
-            x1,
-            x2,
-            x3,
-            volumenOptimo,
-          };
-        }
-        
-        // Calcular el área mínima
-        function calcularAreaMinima(volumen) {
-          const x1 = Math.pow(4, 1 / 6) * Math.pow(volumen, 1 / 3); // Largo y Ancho
-          const x2 = x1; // Largo y Ancho iguales
-          const x3 = x1 / 2; // Altura
-          const areaMinima = 3 * Math.pow(4, 1 / 3) * Math.pow(volumen, 2 / 3);
-        
-          return {
-            x1,
-            x2,
-            x3,
-            areaMinima,
-          };
-        }
-        
-        // Manejar el cálculo según la operación seleccionada
-        function manejarCalculo() {
-          const inputValue = parseFloat(document.getElementById('input-value').value);
-          const resultadoDiv = document.getElementById('resultado');
-        
-          if (isNaN(inputValue) || inputValue <= 0) {
-            resultadoDiv.style.display = 'block';
-            resultadoDiv.innerHTML = `<p id="error">El valor debe ser un número positivo.</p>`;
-            return;
-          }
-        
-          let resultadoHTML = '';
-        
-          if (currentOperation === 'volumen') {
-            const { x1, x2, x3, volumenOptimo } = calcularVolumenMaximo(inputValue);
-            resultadoHTML = `
-                    <h3>Resultados: Volumen Máximo</h3>
-                    <p><strong>Largo (x1):</strong> ${x1.toFixed(2)} m</p>
-                    <p><strong>Ancho (x2):</strong> ${x2.toFixed(2)} m</p>
-                    <p><strong>Alto (x3):</strong> ${x3.toFixed(2)} m</p>
-                    <p><strong>Volumen Máximo:</strong> ${volumenOptimo.toFixed(
-                      2
-                    )} m³</p>
-                `;
-          } else if (currentOperation === 'area') {
-            const { x1, x2, x3, areaMinima } = calcularAreaMinima(inputValue);
-            resultadoHTML = `
-                    <h3>Resultados: Área Mínima</h3>
-                    <p><strong>Largo (x1):</strong> ${x1.toFixed(2)} m</p>
-                    <p><strong>Ancho (x2):</strong> ${x2.toFixed(2)} m</p>
-                    <p><strong>Alto (x3):</strong> ${x3.toFixed(2)} m</p>
-                    <p><strong>Área Mínima:</strong> ${areaMinima.toFixed(2)} m²</p>
-                `;
-          }
-        
-          resultadoDiv.style.display = 'block';
-          resultadoDiv.innerHTML = resultadoHTML;
-        }
-        
-        // Asociar eventos a los botones
-        document
-          .getElementById('volumen-maximo-btn') 
-          .addEventListener('click', () => mostrarFormulario('volumen'));
-        document
-          .getElementById('area-minima-btn')
-          .addEventListener('click', () => mostrarFormulario('area'));
-        document
-          .getElementById('calcular-btn')
-          .addEventListener('click', manejarCalculo);
-        </script>
+    // Mostrar u ocultar el formulario de entrada
+    function mostrarFormulario(operacion) {
+      currentOperation = operacion;
+      const inputLabel = document.getElementById('input-label');
+      const inputsDiv = document.getElementById('inputs');
+      const resultadoDiv = document.getElementById('resultado');
+    
+      resultadoDiv.style.display = 'none'; // Ocultar resultados previos
+      inputsDiv.style.display = 'block';
+    
+      if (operacion === 'volumen') {
+        inputLabel.textContent = 'Ingrese el área fija de la caja (en m²):';
+      } else if (operacion === 'area') {
+        inputLabel.textContent = 'Ingrese el volumen deseado de la caja (en m³):';
+      }
+    }
+    
+    // Calcular el volumen máximo
+    function calcularVolumenMaximo(area) {
+      const x1 = Math.sqrt(area / 3.0);
+      const x2 = x1;
+      const x3 = x1 / 2;
+      const volumenOptimo = x1 * x2 * x3;
+    
+      return {
+        x1,
+        x2,
+        x3,
+        volumenOptimo,
+      };
+    }
+    
+    // Calcular el área mínima
+    function calcularAreaMinima(volumen) {
+      const x1 = Math.pow(4, 1 / 6) * Math.pow(volumen, 1 / 3); // Largo y Ancho
+      const x2 = x1; // Largo y Ancho iguales
+      const x3 = x1 / 2; // Altura
+      const areaMinima = 3 * Math.pow(4, 1 / 3) * Math.pow(volumen, 2 / 3);
+    
+      return {
+        x1,
+        x2,
+        x3,
+        areaMinima,
+      };
+    }
+    
+    // Manejar el cálculo según la operación seleccionada
+    function manejarCalculo() {
+      const inputValue = parseFloat(document.getElementById('input-value').value);
+      const resultadoDiv = document.getElementById('resultado');
+    
+      if (isNaN(inputValue) || inputValue <= 0) {
+        resultadoDiv.style.display = 'block';
+        resultadoDiv.innerHTML = `<p id="error" class="error-text">El valor debe ser un número positivo.</p>`;
+        return;
+      }
+    
+      let resultadoHTML = '';
+    
+      if (currentOperation === 'volumen') {
+        const { x1, x2, x3, volumenOptimo } = calcularVolumenMaximo(inputValue);
+        resultadoHTML = `
+                <h3 class="result-title">Resultados: Volumen Máximo</h3>
+                <p><strong>Largo (x1):</strong> ${x1.toFixed(2)} m</p>
+                <p><strong>Ancho (x2):</strong> ${x2.toFixed(2)} m</p>
+                <p><strong>Alto (x3):</strong> ${x3.toFixed(2)} m</p>
+                <p><strong>Volumen Máximo:</strong> ${volumenOptimo.toFixed(2)} m³</p>
+            `;
+      } else if (currentOperation === 'area') {
+        const { x1, x2, x3, areaMinima } = calcularAreaMinima(inputValue);
+        resultadoHTML = `
+                <h3 class="result-title">Resultados: Área Mínima</h3>
+                <p><strong>Largo (x1):</strong> ${x1.toFixed(2)} m</p>
+                <p><strong>Ancho (x2):</strong> ${x2.toFixed(2)} m</p>
+                <p><strong>Alto (x3):</strong> ${x3.toFixed(2)} m</p>
+                <p><strong>Área Mínima:</strong> ${areaMinima.toFixed(2)} m²</p>
+            `;
+      }
+    
+      resultadoDiv.style.display = 'block';
+      resultadoDiv.innerHTML = resultadoHTML;
+    }
+    
+    // Asociar eventos a los botones
+    document
+      .getElementById('volumen-maximo-btn') 
+      .addEventListener('click', () => mostrarFormulario('volumen'));
+    document
+      .getElementById('area-minima-btn')
+      .addEventListener('click', () => mostrarFormulario('area'));
+    document
+      .getElementById('calcular-btn')
+      .addEventListener('click', manejarCalculo);
+    </script>
 </body>
 </html>

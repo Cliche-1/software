@@ -5,134 +5,160 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora PERT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <link href="assets/styles.css" rel="stylesheet">
+    <style>
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
 </head>
-<div class="container">
-    <h1>Optimización sin Restricciones</h1>
-    <button id="bisectionBtn">Método de Bisección</button>
-    <button id="newtonBtn">Método de Newton</button>
-    
-    <form id="bisectionForm" style="display:none;">
-        <h2>Método de Bisección</h2>
-        <label for="bisectionFunc">Función a optimizar:</label>
-        <input type="text" id="bisectionFunc" placeholder="Ej: 12*x - 3*x^4 - 2*x^6" required>
-        <label for="bisectionA">Límite inferior (a):</label>
-        <input type="number" id="bisectionA" step="any" required>
-        <label for="bisectionB">Límite superior (b):</label>
-        <input type="number" id="bisectionB" step="any" required>
-        <label for="bisectionTolerance">Tolerancia:</label>
-        <input type="number" id="bisectionTolerance" step="any" required>
-        <button type="submit">Calcular</button>
-    </form>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4 text-left">Optimización sin Restricciones</h1>
 
-    <form id="newtonForm" style="display:none;">
-        <h2>Método de Newton</h2>
-        <label for="newtonFunc">Función a optimizar:</label>
-        <input type="text" id="newtonFunc" placeholder="Ej: 12*x - 3*x^4 - 2*x^6" required>
-        <label for="newtonX0">Punto inicial (x0):</label>
-        <input type="number" id="newtonX0" step="any" required>
-        <label for="newtonTolerance">Tolerancia:</label>
-        <input type="number" id="newtonTolerance" step="any" required>
-        <button type="submit">Calcular</button>
-    </form>
+        <div class="row mb-4">
+            <div class="col-md-6 text-center">
+                <button id="bisectionBtn" class="btn btn-primary btn-lg mx-2">Método de Bisección</button>
+                <button id="newtonBtn" class="btn btn-secondary btn-lg mx-2">Método de Newton</button>
+            </div>
+        </div>
 
-    <div id="result"></div>
-</div>
+        <form id="bisectionForm" class="mb-4" style="display:none;">
+            <h2 class="text-center text-success">Método de Bisección</h2>
+            <div class="mb-3">
+                <label for="bisectionFunc" class="form-label">Función a optimizar:</label>
+                <input type="text" id="bisectionFunc" class="form-control" placeholder="Ej: 12*x - 3*x^4 - 2*x^6" required>
+            </div>
+            <div class="mb-3">
+                <label for="bisectionA" class="form-label">Límite inferior (a):</label>
+                <input type="number" id="bisectionA" class="form-control" step="any" required>
+            </div>
+            <div class="mb-3">
+                <label for="bisectionB" class="form-label">Límite superior (b):</label>
+                <input type="number" id="bisectionB" class="form-control" step="any" required>
+            </div>
+            <div class="mb-3">
+                <label for="bisectionTolerance" class="form-label">Tolerancia:</label>
+                <input type="number" id="bisectionTolerance" class="form-control" step="any" required>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">Calcular</button>
+            </div>
+        </form>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
-<script>
-    const bisectionBtn = document.getElementById('bisectionBtn');
-    const newtonBtn = document.getElementById('newtonBtn');
-    const bisectionForm = document.getElementById('bisectionForm');
-    const newtonForm = document.getElementById('newtonForm');
-    const resultDiv = document.getElementById('result');
+        <form id="newtonForm" class="mb-4" style="display:none;">
+            <h2 class="text-center text-success">Método de Newton</h2>
+            <div class="mb-3">
+                <label for="newtonFunc" class="form-label">Función a optimizar:</label>
+                <input type="text" id="newtonFunc" class="form-control" placeholder="Ej: 12*x - 3*x^4 - 2*x^6" required>
+            </div>
+            <div class="mb-3">
+                <label for="newtonX0" class="form-label">Punto inicial (x0):</label>
+                <input type="number" id="newtonX0" class="form-control" step="any" required>
+            </div>
+            <div class="mb-3">
+                <label for="newtonTolerance" class="form-label">Tolerancia:</label>
+                <input type="number" id="newtonTolerance" class="form-control" step="any" required>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn btn-secondary btn-lg">Calcular</button>
+            </div>
+        </form>
 
-    bisectionBtn.addEventListener('click', () => {
-        bisectionForm.style.display = 'block';
-        newtonForm.style.display = 'none';
-        resultDiv.innerHTML = '';
-    });
+        <div id="result" class="text-center mt-4"></div>
+    </div>
 
-    newtonBtn.addEventListener('click', () => {
-        newtonForm.style.display = 'block';
-        bisectionForm.style.display = 'none';
-        resultDiv.innerHTML = '';
-    });
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script>
+        const bisectionBtn = document.getElementById('bisectionBtn');
+        const newtonBtn = document.getElementById('newtonBtn');
+        const bisectionForm = document.getElementById('bisectionForm');
+        const newtonForm = document.getElementById('newtonForm');
+        const resultDiv = document.getElementById('result');
 
-    function bisection(f, df, a, b, tolerance) {
-        let x = (a + b) / 2;
-        while (b - a > 2 * tolerance) {
-            if (df(x) > 0) {
-                a = x;
-            } else {
-                b = x;
+        bisectionBtn.addEventListener('click', () => {
+            bisectionForm.style.display = 'block';
+            newtonForm.style.display = 'none';
+            resultDiv.innerHTML = '';
+        });
+
+        newtonBtn.addEventListener('click', () => {
+            newtonForm.style.display = 'block';
+            bisectionForm.style.display = 'none';
+            resultDiv.innerHTML = '';
+        });
+
+        function bisection(f, df, a, b, tolerance) {
+            let x = (a + b) / 2;
+            while (b - a > 2 * tolerance) {
+                if (df(x) > 0) {
+                    a = x;
+                } else {
+                    b = x;
+                }
+                x = (a + b) / 2;
             }
-            x = (a + b) / 2;
+            return x;
         }
-        return x;
-    }
 
-    function newton(f, df, x0, tolerance) {
-        let x = x0;
-        let iterations = 0;
-        const maxIterations = 100;
-        
-        while (iterations < maxIterations) {
-            const firstDerivative = df(x);
-            
-            const secondDerivative = math.derivative(math.derivative(f, 'x'), 'x').evaluate({x: x});
-            
-            if (Math.abs(secondDerivative) < 1e-10) {
-                throw new Error("La segunda derivada está muy cerca de cero. El método puede no converger.");
+        function newton(f, df, x0, tolerance) {
+            let x = x0;
+            let iterations = 0;
+            const maxIterations = 100;
+
+            while (iterations < maxIterations) {
+                const firstDerivative = df(x);
+                const secondDerivative = math.derivative(math.derivative(f, 'x'), 'x').evaluate({x: x});
+
+                if (Math.abs(secondDerivative) < 1e-10) {
+                    throw new Error("La segunda derivada está muy cerca de cero. El método puede no converger.");
+                }
+
+                const dx = firstDerivative / secondDerivative;
+                const xNew = x - dx;
+
+                if (Math.abs(xNew - x) < tolerance) {
+                    return xNew;
+                }
+
+                x = xNew;
+                iterations++;
             }
-            
-            const dx = firstDerivative / secondDerivative;
-            const xNew = x - dx;
-            
-            if (Math.abs(xNew - x) < tolerance) {
-                return xNew;
+
+            throw new Error("El método no convergió después del máximo de iteraciones");
+        }
+
+        bisectionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const func = document.getElementById('bisectionFunc').value;
+            const a = parseFloat(document.getElementById('bisectionA').value);
+            const b = parseFloat(document.getElementById('bisectionB').value);
+            const tolerance = parseFloat(document.getElementById('bisectionTolerance').value);
+
+            try {
+                const f = (x) => math.evaluate(func, {x: x});
+                const df = (x) => math.derivative(func, 'x').evaluate({x: x});
+                const x = bisection(f, df, a, b, tolerance);
+                resultDiv.innerHTML = `Método de Bisección: x* ≈ ${x.toFixed(6)}, f(x*) ≈ ${f(x).toFixed(6)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
             }
-            
-            x = xNew;
-            iterations++;
-        }
-        
-        throw new Error("El método no convergió después del máximo de iteraciones");
-    }
+        });
 
-    bisectionForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const func = document.getElementById('bisectionFunc').value;
-        const a = parseFloat(document.getElementById('bisectionA').value);
-        const b = parseFloat(document.getElementById('bisectionB').value);
-        const tolerance = parseFloat(document.getElementById('bisectionTolerance').value);
+        newtonForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const func = document.getElementById('newtonFunc').value;
+            const x0 = parseFloat(document.getElementById('newtonX0').value);
+            const tolerance = parseFloat(document.getElementById('newtonTolerance').value);
 
-        try {
-            const f = (x) => math.evaluate(func, {x: x});
-            const df = (x) => math.derivative(func, 'x').evaluate({x: x});
-            const x = bisection(f, df, a, b, tolerance);
-            resultDiv.innerHTML = `Método de Bisección: x* ≈ ${x.toFixed(6)}, f(x*) ≈ ${f(x).toFixed(6)}`;
-        } catch (error) {
-            resultDiv.innerHTML = `Error: ${error.message}`;
-        }
-    });
-
-    newtonForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const func = document.getElementById('newtonFunc').value;
-        const x0 = parseFloat(document.getElementById('newtonX0').value);
-        const tolerance = parseFloat(document.getElementById('newtonTolerance').value);
-
-        try {
-            const f = (x) => math.evaluate(func, {x: x});
-            const df = (x) => math.derivative(func, 'x').evaluate({x: x});
-            const x = newton(func, df, x0, tolerance);
-            resultDiv.innerHTML = `Método de Newton: x* ≈ ${x.toFixed(6)}, f(x*) ≈ ${f(x).toFixed(6)}`;
-        } catch (error) {
-            resultDiv.innerHTML = `Error: ${error.message}`;
-        }
-    });
-</script>
+            try {
+                const f = (x) => math.evaluate(func, {x: x});
+                const df = (x) => math.derivative(func, 'x').evaluate({x: x});
+                const x = newton(func, df, x0, tolerance);
+                resultDiv.innerHTML = `Método de Newton: x* ≈ ${x.toFixed(6)}, f(x*) ≈ ${f(x).toFixed(6)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+            }
+        });
+    </script>
 </body>
 </html>

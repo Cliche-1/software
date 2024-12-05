@@ -4,60 +4,65 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Programación No Convexa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   </head>
-  <body>
-    <header class="hero">
-      <h1>Programación No Convexa</h1>
-    </header>
-    <div class="container">
-      <form id="optimizationForm">
-        <label for="functionInput"
-          >Función objetivo (en formato JavaScript, ej:
-          (x-1)*(x-2)*(x-3)*(x-4)*(x-5)):</label
-        >
-        <input
-          type="text"
-          id="functionInput"
-          value="(x-1)*(x-2)*(x-3)*(x-4)*(x-5)"
-          required
-        />
+  <body class="bg-light">
 
-        <label for="lowerBound">Límite inferior:</label>
-        <input type="number" id="lowerBound" value="1" required />
+    <div class="container mt-5">
+      <h1 class="mb-4">Programación no Convexa</h1>
+    </div>
 
-        <label for="upperBound">Límite superior:</label>
-        <input type="number" id="upperBound" value="5" required />
+    <div class="container py-5">
+      <form id="optimizationForm" class="mb-4">
+        <div class="mb-3">
+          <label for="functionInput" class="form-label"
+            >Función objetivo (ej:
+            (x-1)*(x-2)*(x-3)*(x-4)*(x-5)):</label
+          >
+          <input
+            type="text"
+            id="functionInput"
+            class="form-control"
+            value="(x-1)*(x-2)*(x-3)*(x-4)*(x-5)"
+            required
+          />
+        </div>
 
-        <label for="initialGuess">Punto inicial:</label>
-        <input type="number" id="initialGuess" value="3" required />
+        <div class="mb-3">
+          <label for="lowerBound" class="form-label">Límite inferior:</label>
+          <input type="number" id="lowerBound" class="form-control" value="1" required />
+        </div>
 
-        <button type="button" onclick="optimize()">Calcular Mínimo</button>
+        <div class="mb-3">
+          <label for="upperBound" class="form-label">Límite superior:</label>
+          <input type="number" id="upperBound" class="form-control" value="5" required />
+        </div>
+
+        <div class="mb-3">
+          <label for="initialGuess" class="form-label">Punto inicial:</label>
+          <input type="number" id="initialGuess" class="form-control" value="3" required />
+        </div>
+
+        <div class="text-center">
+          <button type="button" class="btn btn-primary btn-lg" onclick="optimize()">Calcular Mínimo</button>
+        </div>
       </form>
 
-      <div id="resultados"></div>
+      <div id="resultados" class="text-center mt-4"></div>
     </div>
 
     <script>
       function optimize() {
-        // Obtener valores del formulario
         const funcInput = document.getElementById('functionInput').value;
-        const lowerBound = parseFloat(
-          document.getElementById('lowerBound').value
-        );
-        const upperBound = parseFloat(
-          document.getElementById('upperBound').value
-        );
-        const initialGuess = parseFloat(
-          document.getElementById('initialGuess').value
-        );
+        const lowerBound = parseFloat(document.getElementById('lowerBound').value);
+        const upperBound = parseFloat(document.getElementById('upperBound').value);
+        const initialGuess = parseFloat(document.getElementById('initialGuess').value);
 
-        // Convertir la función objetivo a una función de JavaScript
         const objectiveFunction = new Function('x', `return ${funcInput};`);
 
-        // Algoritmo para minimizar (Método de gradiente aproximado)
         let x = initialGuess;
-        let stepSize = 0.01; // Tamaño de paso
-        let tolerance = 1e-6; // Tolerancia
+        let stepSize = 0.01;
+        let tolerance = 1e-6;
         let maxIterations = 1000;
         let iterations = 0;
 
@@ -65,30 +70,23 @@
           const gradient =
             (objectiveFunction(x + stepSize) - objectiveFunction(x)) / stepSize;
 
-          // Actualizar x usando gradiente descendente
           x -= stepSize * gradient;
 
-          // Limitar x dentro de los límites
           if (x < lowerBound) x = lowerBound;
           if (x > upperBound) x = upperBound;
 
-          // Condición de parada
           if (Math.abs(gradient) < tolerance) break;
 
           iterations++;
         }
 
-        // Calcular el valor mínimo
         const minValue = objectiveFunction(x);
 
-        // Mostrar resultados
         document.getElementById('resultados').innerHTML = `
-                <h2>Resultados:</h2>
-                <p><strong>Valor óptimo para x:</strong> ${x.toFixed(6)}</p>
-                <p><strong>Valor objetivo óptimo:</strong> ${minValue.toFixed(
-                  6
-                )}</p>
-            `;
+          <h3 class="text-success">Resultados:</h3>
+          <p><strong>Valor óptimo para x:</strong> ${x.toFixed(6)}</p>
+          <p><strong>Valor objetivo óptimo:</strong> ${minValue.toFixed(6)}</p>
+        `;
       }
     </script>
   </body>

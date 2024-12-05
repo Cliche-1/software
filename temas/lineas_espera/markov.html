@@ -1,141 +1,126 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Sistemas de Colas</title>
+    <title>Esquema de Nacimiento y Muerte</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .result-box {
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-        #chartContainer {
-            width: 100%;
-            height: 300px;
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Sistema de colas Markov</h1>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="lambda" class="form-label">Tasa de llegada (λ):</label>
-                <input type="number" class="form-control" id="lambda" step="0.1" min="0" value="1" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label for="mu" class="form-label">Tasa de servicio (μ):</label>
-                <input type="number" class="form-control" id="mu" step="0.1" min="0" value="2" required>
-            </div>
-        </div>
-        <div class="text-center">
-            <button class="btn btn-primary me-2" onclick="calcular()">Calcular</button>
-        </div>
-        <div id="results" class="result-box mt-4">
-            <h3 class="text-center mb-3">Resultados</h3>
-            <div class="row">
-                <div class="col-md-6 mb-2">
-                    <p><strong>Teorema de Little:</strong></p>
-                    <p>L (número promedio de clientes en el sistema): <span id="L"></span></p>
-                    <p>W (tiempo promedio en el sistema): <span id="W"></span></p>
-                </div>
-                <div class="col-md-6 mb-2">
-                    <p><strong>Probabilidades de Estado Estacionario:</strong></p>
-                    <p>P0 (probabilidad de 0 clientes): <span id="P0"></span></p>
-                    <p>P1 (probabilidad de 1 cliente): <span id="P1"></span></p>
-                    <p>P2 (probabilidad de 2 clientes): <span id="P2"></span></p>
-                </div>
+        <h1 class="text-center">Esquema de Nacimiento y Muerte</h1>
+        <p class="text-center">Ingresa los valores de la tasa de llegada (λ), la tasa de servicio (μ), y el número máximo de estados (n).</p>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form id="queueForm">
+                    <div class="mb-3">
+                        <label for="lambda" class="form-label">Tasa de Llegada (λ)</label>
+                        <input type="number" class="form-control" id="lambda" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mu" class="form-label">Tasa de Servicio (μ)</label>
+                        <input type="number" class="form-control" id="mu" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="states" class="form-label">Número máximo de estados (n)</label>
+                        <input type="number" class="form-control" id="states" min="1" required>
+                    </div>
+                    <button type="button" id="calculateBtn" class="btn btn-primary w-100">Calcular</button>
+                </form>
             </div>
         </div>
-        <div class="mt-4">
-            <h3 class="text-center mb-3">Gráfico de Probabilidades</h3>
-            <div id="chartContainer">
-                <canvas id="myChart"></canvas>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <h2>Resultados</h2>
+                <ul id="results" class="list-group hidden">
+                    <li class="list-group-item">Probabilidad de que el sistema esté vacío (P<sub>0</sub>): <span id="P0"></span></li>
+                    <li class="list-group-item"><strong>Probabilidades estacionarias:</strong>
+                        <div id="stateProbabilities"></div>
+                    </li>
+                    <li class="list-group-item">Longitud promedio de la cola (Lq): <span id="lq"></span></li>
+                    <li class="list-group-item">Tiempo promedio en la cola (Wq): <span id="wq"></span> minutos</li>
+                    <li class="list-group-item">Número promedio en el sistema (L): <span id="l"></span></li>
+                    <li class="list-group-item">Tiempo promedio en el sistema (W): <span id="w"></span> minutos</li>
+                    <li class="list-group-item">Utilización del sistema (1 - P<sub>0</sub>): <span id="rho"></span></li>
+                </ul>
             </div>
         </div>
     </div>
 
     <script>
-        let myChart;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['P0', 'P1', 'P2'],
-                    datasets: [{
-                        label: 'Probabilidad',
-                        data: [0, 0, 0],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 1
-                        }
-                    }
-                }
-            });
-            calcular();
-        });
-
-        function calcular() {
+        document.getElementById('calculateBtn').addEventListener('click', () => {
             const lambda = parseFloat(document.getElementById('lambda').value);
             const mu = parseFloat(document.getElementById('mu').value);
+            const maxStates = parseInt(document.getElementById('states').value);
 
-            if (isNaN(lambda) || isNaN(mu) || lambda <= 0 || mu <= 0) {
-                alert('Por favor, ingrese valores válidos y positivos para λ y μ.');
+            if (
+                isNaN(lambda) ||
+                isNaN(mu) ||
+                isNaN(maxStates) ||
+                lambda <= 0 ||
+                mu <= 0 ||
+                maxStates <= 0
+            ) {
+                alert('Por favor, ingresa valores válidos para \u03bb, \u03bc y n.');
                 return;
             }
 
             if (lambda >= mu) {
-                alert('El sistema es inestable. La tasa de llegadas (λ) debe ser menor que la tasa de servicio (μ).');
+                alert('El sistema no es estable. \u03bb debe ser menor que \u03bc.');
                 return;
             }
 
-            // Teorema de Little
-            const L = lambda / (mu - lambda);
-            const W = 1 / (mu - lambda);
+            const rho = lambda / mu; // Utilización del sistema
+            const ratios = [];
 
-            // Probabilidades de estado estacionario
-            const rho = lambda / mu;
-            const P0 = 1 - rho;
-            const P1 = rho * P0;
-            const P2 = rho * P1;
+            // Calcular la sumatoria para P0
+            let denominator = 0;
+            for (let i = 0; i <= maxStates; i++) {
+                const ratio = Math.pow(rho, i);
+                ratios.push(ratio);
+                denominator += ratio;
+            }
 
-            // Actualizar resultados
-            document.getElementById('L').textContent = L.toFixed(4);
-            document.getElementById('W').textContent = W.toFixed(4);
-            document.getElementById('P0').textContent = P0.toFixed(4);
-            document.getElementById('P1').textContent = P1.toFixed(4);
-            document.getElementById('P2').textContent = P2.toFixed(4);
+            const P0 = 1 / denominator; // Probabilidad de que el sistema esté vacío
 
-            // Actualizar el gráfico
-            actualizarGrafico([P0, P1, P2]);
-        }
+            // Calcular probabilidades estacionarias
+            const probabilities = ratios.map((ratio) => P0 * ratio);
 
-        function actualizarGrafico(probabilidades) {
-            myChart.data.datasets[0].data = probabilidades;
-            myChart.update();
-        }
+            // Calcular longitud promedio de la cola
+            let Lq = 0;
+            for (let i = 1; i <= maxStates; i++) {
+                Lq += i * probabilities[i];
+            }
+
+            // Calcular métricas derivadas
+            const Wq = Lq / lambda; // Tiempo promedio en la cola
+            const L = Lq + rho; // Número promedio en el sistema
+            const W = L / lambda; // Tiempo promedio en el sistema
+
+            // Actualizar resultados en el DOM
+            document.getElementById('P0').innerText = P0.toFixed(4);
+            const stateProbabilitiesContainer =
+                document.getElementById('stateProbabilities');
+            stateProbabilitiesContainer.innerHTML = '';
+
+            probabilities.forEach((p, index) => {
+                const pElement = document.createElement('p');
+                pElement.innerText = `P(${index}) = ${p.toFixed(4)}`;
+                stateProbabilitiesContainer.appendChild(pElement);
+            });
+
+            document.getElementById('lq').innerText = Lq.toFixed(4);
+            document.getElementById('wq').innerText = Wq.toFixed(4);
+            document.getElementById('l').innerText = L.toFixed(4);
+            document.getElementById('w').innerText = W.toFixed(4);
+            document.getElementById('rho').innerText = (1 - P0).toFixed(4);
+
+            document.getElementById('results').classList.remove('hidden');
+        });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

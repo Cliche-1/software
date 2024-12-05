@@ -4,156 +4,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programación Convexa</title>
-    <link rel="stylesheet" href="styles.css">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body>
-    <div class="hero">
-        <h1>Programación Convexa Optimizada</h1>
-    </div>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="container mt-5">
+            <h1 class="mb-4">Programación Convexa</h1>
+          </div>
 
-    <div class="container">
-        <div>
-            <label>Número de variables:</label>
-            <input type="number" id="numVariables" min="2" value="2">
-            <button onclick="inicializarFormulario()">Inicializar Formulario</button>
+        <div class="mb-4">
+            <label for="numVariables" class="form-label fw-semibold">Número de variables:</label>
+            <div class="input-group">
+                <input type="number" id="numVariables" class="form-control" min="2" value="2">
+                <button class="btn btn-primary" onclick="inicializarFormulario()">Inicializar Formulario</button>
+            </div>
         </div>
 
-        <div id="funcionObjetivo"></div>
-        <div id="restricciones"></div>
-        <button onclick="resolver()">Resolver</button>
+        <div id="funcionObjetivo" class="mb-4"></div>
+        <div id="restricciones" class="mb-4"></div>
+        <div class="text-center">
+            <button class="btn btn-success" onclick="resolver()">Resolver</button>
+        </div>
 
-        <div id="resultado" class="result" style="display: none;">
-            <h2>Resultado</h2>
-            <div id="variablesResultado"></div>
-            <p id="valorObjetivo"></p>
+        <div id="resultado" class="card mt-5" style="display: none;">
+            <div class="card-header text-white bg-success">
+                <h2 class="h5 mb-0">Resultado</h2>
+            </div>
+            <div class="card-body">
+                <div id="variablesResultado"></div>
+                <p id="valorObjetivo" class="fw-bold result-text"></p>
+            </div>
         </div>
     </div>
-
     <script>
         let coeficientesObjetivo = [];
-let restricciones = [];
+        let restricciones = [];
 
-function inicializarFormulario() {
-    const numVariables = parseInt(document.getElementById("numVariables").value);
-    coeficientesObjetivo = Array.from({ length: numVariables }, () => ({ cuadratico: 1, lineal: 0 }));
-    restricciones = Array.from({ length: 2 }, () => ({
-        coeficientes: Array(numVariables).fill(1),
-        limite: 10,
-        tipo: '≤'
-    }));
+        function inicializarFormulario() {
+            const numVariables = parseInt(document.getElementById("numVariables").value);
+            coeficientesObjetivo = Array.from({ length: numVariables }, () => ({ cuadratico: 1, lineal: 0 }));
+            restricciones = Array.from({ length: 2 }, () => ({
+                coeficientes: Array(numVariables).fill(1),
+                limite: 10,
+                tipo: '≤'
+            }));
 
-    generarFormulario(numVariables);
-}
-
-function generarFormulario(numVariables) {
-    const funcionObjetivoDiv = document.getElementById("funcionObjetivo");
-    const restriccionesDiv = document.getElementById("restricciones");
-
-    funcionObjetivoDiv.innerHTML = "<h2>Función Objetivo</h2>";
-    restriccionesDiv.innerHTML = "<h2>Restricciones</h2>";
-
-    coeficientesObjetivo.forEach((coef, index) => {
-        funcionObjetivoDiv.innerHTML += `
-            <br><label>
-                Coef. Cuadrático (x${index + 1}²):
-                <input type="number" value="${coef.cuadratico}" onchange="actualizarObjetivo(${index}, 'cuadratico', this.value)">
-            </label>
-            <br><label>
-                Coef. Lineal (x${index + 1}):
-                <input type="number" value="${coef.lineal}" onchange="actualizarObjetivo(${index}, 'lineal', this.value)">
-            </label><br>
-        `;
-    });
-
-    restricciones.forEach((restriccion, index) => {
-        let restriccionHTML = `<div>`;
-        restriccion.coeficientes.forEach((coef, coefIndex) => {
-            restriccionHTML += `
-                <input type="number" value="${coef}" placeholder="Coef x${coefIndex + 1}" 
-                onchange="actualizarRestriccion(${index}, 'coeficientes', this.value, ${coefIndex})">
-            `;
-        });
-        restriccionHTML += `
-            <select onchange="actualizarRestriccion(${index}, 'tipo', this.value)">
-                <option value="≤"${restriccion.tipo === '≤' ? ' selected' : ''}>≤</option>
-                <option value="≥"${restriccion.tipo === '≥' ? ' selected' : ''}>≥</option>
-            </select>
-            <input type="number" value="${restriccion.limite}" placeholder="Límite"
-            onchange="actualizarRestriccion(${index}, 'limite', this.value)">
-        </div>`;
-        restriccionesDiv.innerHTML += restriccionHTML;
-    });
-}
-
-function actualizarObjetivo(index, campo, valor) {
-    coeficientesObjetivo[index][campo] = parseFloat(valor) || 0;
-}
-
-function actualizarRestriccion(index, campo, valor, coefIndex = null) {
-    if (campo === 'coeficientes') {
-        restricciones[index].coeficientes[coefIndex] = parseFloat(valor) || 0;
-    } else if (campo === 'tipo') {
-        restricciones[index].tipo = valor;
-    } else {
-        restricciones[index].limite = parseFloat(valor) || 0;
-    }
-}
-
-function gradienteProyectado(variablesIniciales, iteraciones = 1000, tasaAprendizaje = 0.01) {
-    let variables = [...variablesIniciales];
-
-    for (let iter = 0; iter < iteraciones; iter++) {
-        const gradiente = variables.map((_, i) => {
-            const { cuadratico, lineal } = coeficientesObjetivo[i];
-            return 2 * cuadratico * variables[i] + lineal;
-        });
-
-        let nuevasVariables = variables.map((v, i) => v - tasaAprendizaje * gradiente[i]);
-        nuevasVariables = proyectarRestricciones(nuevasVariables);
-
-        if (norma(gradiente) < 1e-6) break;
-
-        variables = [...nuevasVariables];
-    }
-
-    return variables;
-}
-
-function proyectarRestricciones(variables) {
-    return restricciones.reduce((vars, { coeficientes, limite, tipo }) => {
-        const valorRestriccion = coeficientes.reduce((sum, coef, i) => sum + coef * vars[i], 0);
-        if (tipo === '≤' && valorRestriccion > limite) {
-            const factor = limite / valorRestriccion;
-            return vars.map((v) => v * factor);
+            generarFormulario(numVariables);
         }
-        return vars;
-    }, variables);
-}
 
-function norma(vector) {
-    return Math.sqrt(vector.reduce((sum, v) => sum + v ** 2, 0));
-}
+        function generarFormulario(numVariables) {
+            const funcionObjetivoDiv = document.getElementById("funcionObjetivo");
+            const restriccionesDiv = document.getElementById("restricciones");
 
-function calcularObjetivo(variables) {
-    return variables.reduce((sum, x, i) => sum +
-        coeficientesObjetivo[i].cuadratico * x ** 2 +
-        coeficientesObjetivo[i].lineal * x, 0);
-}
+            funcionObjetivoDiv.innerHTML = `<h2 class="text-primary fw-semibold">Función Objetivo</h2>`;
+            restriccionesDiv.innerHTML = `<h2 class="text-primary fw-semibold">Restricciones</h2>`;
 
-function resolver() {
-    const variablesIniciales = Array(coeficientesObjetivo.length).fill(1);
-    const solucion = gradienteProyectado(variablesIniciales);
-    const valorObjetivo = calcularObjetivo(solucion);
+            coeficientesObjetivo.forEach((coef, index) => {
+                funcionObjetivoDiv.innerHTML += `
+                    <div class="mb-3">
+                        <label class="form-label">Coef. Cuadrático (x${index + 1}²):</label>
+                        <input type="number" class="form-control mb-2" value="${coef.cuadratico}" 
+                            onchange="actualizarObjetivo(${index}, 'cuadratico', this.value)">
+                        <label class="form-label">Coef. Lineal (x${index + 1}):</label>
+                        <input type="number" class="form-control" value="${coef.lineal}" 
+                            onchange="actualizarObjetivo(${index}, 'lineal', this.value)">
+                    </div>
+                `;
+            });
 
-    const resultadoDiv = document.getElementById("resultado");
-    const variablesResultadoDiv = document.getElementById("variablesResultado");
+            restricciones.forEach((restriccion, index) => {
+                let restriccionHTML = `<div class="mb-3">`;
+                restriccion.coeficientes.forEach((coef, coefIndex) => {
+                    restriccionHTML += `
+                        <input type="number" class="form-control d-inline-block w-25 me-2 mb-2" 
+                            value="${coef}" placeholder="Coef x${coefIndex + 1}" 
+                            onchange="actualizarRestriccion(${index}, 'coeficientes', this.value, ${coefIndex})">
+                    `;
+                });
+                restriccionHTML += `
+                    <select class="form-select d-inline-block w-auto me-2 mb-2" 
+                        onchange="actualizarRestriccion(${index}, 'tipo', this.value)">
+                        <option value="≤"${restriccion.tipo === '≤' ? ' selected' : ''}>≤</option>
+                        <option value="≥"${restriccion.tipo === '≥' ? ' selected' : ''}>≥</option>
+                    </select>
+                    <input type="number" class="form-control d-inline-block w-25" 
+                        value="${restriccion.limite}" placeholder="Límite" 
+                        onchange="actualizarRestriccion(${index}, 'limite', this.value)">
+                </div>`;
+                restriccionesDiv.innerHTML += restriccionHTML;
+            });
+        }
 
-    variablesResultadoDiv.innerHTML = solucion.map((val, i) => `<p>x${i + 1} = ${val.toFixed(4)}</p>`).join('');
-    document.getElementById("valorObjetivo").innerText = `Valor Óptimo: ${valorObjetivo.toFixed(4)}`;
-    resultadoDiv.style.display = 'block';
-}
+        function actualizarObjetivo(index, campo, valor) {
+            coeficientesObjetivo[index][campo] = parseFloat(valor) || 0;
+        }
 
+        function actualizarRestriccion(index, campo, valor, coefIndex = null) {
+            if (campo === 'coeficientes') {
+                restricciones[index].coeficientes[coefIndex] = parseFloat(valor) || 0;
+            } else if (campo === 'tipo') {
+                restricciones[index].tipo = valor;
+            } else {
+                restricciones[index].limite = parseFloat(valor) || 0;
+            }
+        }
+
+        function gradienteProyectado(variablesIniciales, iteraciones = 1000, tasaAprendizaje = 0.01) {
+            let variables = [...variablesIniciales];
+
+            for (let iter = 0; iter < iteraciones; iter++) {
+                const gradiente = variables.map((_, i) => {
+                    const { cuadratico, lineal } = coeficientesObjetivo[i];
+                    return 2 * cuadratico * variables[i] + lineal;
+                });
+
+                let nuevasVariables = variables.map((v, i) => v - tasaAprendizaje * gradiente[i]);
+                nuevasVariables = proyectarRestricciones(nuevasVariables);
+
+                if (norma(gradiente) < 1e-6) break;
+
+                variables = [...nuevasVariables];
+            }
+
+            return variables;
+        }
+
+        function proyectarRestricciones(variables) {
+            return restricciones.reduce((vars, { coeficientes, limite, tipo }) => {
+                const valorRestriccion = coeficientes.reduce((sum, coef, i) => sum + coef * vars[i], 0);
+                if (tipo === '≤' && valorRestriccion > limite) {
+                    const factor = limite / valorRestriccion;
+                    return vars.map((v) => v * factor);
+                }
+                return vars;
+            }, variables);
+        }
+
+        function norma(vector) {
+            return Math.sqrt(vector.reduce((sum, v) => sum + v ** 2, 0));
+        }
+
+        function calcularObjetivo(variables) {
+            return variables.reduce((sum, x, i) => sum +
+                coeficientesObjetivo[i].cuadratico * x ** 2 +
+                coeficientesObjetivo[i].lineal * x, 0);
+        }
+
+        function resolver() {
+            const variablesIniciales = Array(coeficientesObjetivo.length).fill(1);
+            const solucion = gradienteProyectado(variablesIniciales);
+            const valorObjetivo = calcularObjetivo(solucion);
+
+            const resultadoDiv = document.getElementById("resultado");
+            const variablesResultadoDiv = document.getElementById("variablesResultado");
+
+            variablesResultadoDiv.innerHTML = solucion.map((val, i) => `<p class="mb-1">x${i + 1} = ${val.toFixed(4)}</p>`).join('');
+            document.getElementById("valorObjetivo").innerText = `Valor Óptimo: ${valorObjetivo.toFixed(4)}`;
+            resultadoDiv.style.display = 'block';
+        }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
