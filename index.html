@@ -1,13 +1,358 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Investigación de Operaciones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --sidebar-width: 250px;
+        }
+        .navbar {
+            background-color: var(--primary-color);
+        }
+        .navbar-brand, .navbar-nav .nav-link {
+            color: white !important;
+        }
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            min-height: 100vh;
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 56px;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.5rem 1rem;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        main {
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+            main {
+                margin-left: 0;
+            }
+            .sidebar.active {
+                margin-left: 0;
+            }
+            main.active {
+                margin-left: var(--sidebar-width);
+            }
+        }
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-enter {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        .fade-enter-active {
+            opacity: 1;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Investigación de Operaciones</a>
+            <button class="navbar-toggler" type="button" id="sidebarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebar" class="sidebar">
+                <ul class="nav flex-column" id="mainNav"></ul>
+            </nav>
+
+            <main id="main-content">
+                <h1 class="mt-4 mb-4"> </h1>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        
+                    </div>
+                    <div class="col-md-6 mb-4">
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const state = {
+            currentModule: null,
+            loadedScripts: new Set(),
+            navigation: {
+                inventario: {
+                    title: 'Inventario',
+                    icon: 'fas fa-boxes',
+                    items: [
+                        { name: 'EOQ', path: 'temas/inventario/metodo1.html' },
+                        { name: 'EOQ Descuentos', path: 'temas/inventario/metodo2.html' },
+                        { name: 'Faltantes Planeados', path: 'temas/inventario/metodo3.html' },
+                        { name: 'Tamaño Lote de Producción', path: 'temas/inventario/metodo4.html' },
+                        { name: 'Tiempo y demanda Prob. Sin ventas perdidas', path: 'temas/inventario/metodo5.html' },
+                        { name: 'Tiempo y demanda Prob. Con ventas perdidas', path: 'temas/inventario/metodo6.html' },
+                        { name: 'Demanda probabilistica punto de reorden', path: 'temas/inventario/metodo7.html' }
+                    ]
+                },
+                rutasCriticas: {
+                    title: 'Rutas Críticas',
+                    icon: 'fas fa-project-diagram',
+                    items: [
+                        { name: 'CPM', path: 'temas/rutas_criticas/cpm.html' },
+                        { name: 'PERT', path: 'temas/rutas_criticas/pert.html' }
+                    ]
+                },
+                teoriaDecisiones: {
+                    title: 'Teoría de Decisiones',
+                    icon: 'fas fa-balance-scale',
+                    items: [
+                        { name: 'AHP', path: 'temas/teoria_decisiones/ahp.html' },
+                        { name: 'Bajo Incertidumbre', path: 'temas/teoria_decisiones/bajo_incertidumbre.html' },
+                        { name: 'Árbol de decisiones', path: 'temas/teoria_decisiones/arbol_decisiones.html' }
+                    ]
+                },
+                lineasEspera: {
+                    title: 'Líneas de Espera',
+                    icon: 'fas fa-users',
+                    items: [
+                        { name: 'M/M/1', path: 'temas/lineas_espera/MM1.html' },
+                        { name: 'M/M/c', path: 'temas/lineas_espera/MMc.html' },
+                        { name: 'Esquema de Nacimiento y Muerte', path: 'temas/lineas_espera/markov.html' },
+                        { name: 'M/G/1', path: 'temas/lineas_espera/MG1.html' },
+                        { name: 'M/G/c/0', path: 'temas/lineas_espera/MGc0.html' },
+                        { name: 'Fuentes Finitas', path: 'temas/lineas_espera/fuentes_finitas.html' }
+                    ]
+                }
+            }
+        };
+
+        // Utilidades
+        const utils = {
+            createElementFromHTML(htmlString) {
+                const div = document.createElement('div');
+                div.innerHTML = htmlString.trim();
+                return div.firstChild;
+            },
+
+            async loadScript(src) {
+                if (state.loadedScripts.has(src)) return;
+                
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = () => {
+                        state.loadedScripts.add(src);
+                        resolve();
+                    };
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+        };
+
+        // Gestor de contenido
+        const contentManager = {
+            async loadContent(url) {
+                const mainContent = document.getElementById('main-content');
+                
+                try {
+                    mainContent.innerHTML = '<div class="loading-spinner"></div>';
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Limpiar contenido anterior
+                    mainContent.innerHTML = '';
+                    
+                    // Crear contenedor para la transición
+                    const container = document.createElement('div');
+                    container.className = 'fade-enter';
+                    
+                    // Agregar nuevo contenido
+                    Array.from(doc.body.children).forEach(element => {
+                        if (element.tagName !== 'SCRIPT') {
+                            container.appendChild(element.cloneNode(true));
+                        }
+                    });
+                    
+                    mainContent.appendChild(container);
+                    
+                    // Forzar reflow
+                    container.offsetHeight;
+                    container.classList.add('fade-enter-active');
+                    
+                    // Cargar scripts
+                    const scripts = doc.getElementsByTagName('script');
+                    for (const script of scripts) {
+                        if (script.src) {
+                            await utils.loadScript(script.src);
+                        } else {
+                            const newScript = document.createElement('script');
+                            newScript.textContent = script.textContent;
+                            mainContent.appendChild(newScript);
+                        }
+                    }
+                    
+                    // Reinicializar componentes específicos
+                    if (window.mermaid) {
+                        mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading content:', error);
+                    mainContent.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <h4 class="alert-heading">Error al cargar el contenido</h4>
+                            <p>${error.message}</p>
+                            <hr>
+                            <button class="btn btn-outline-danger" onclick="contentManager.loadContent('${url}')">
+                                Reintentar
+                            </button>
+                        </div>`;
+                }
+            }
+        };
+
+        // Navegación
+        const navigation = {
+            init() {
+                const mainNav = document.getElementById('mainNav');
+                
+                Object.entries(state.navigation).forEach(([key, section]) => {
+                    const navItem = this.createNavSection(key, section);
+                    mainNav.appendChild(navItem);
+                });
+                
+                this.setupEventListeners();
+            },
+
+            createNavSection(key, section) {
+                const li = document.createElement('li');
+                li.className = 'nav-item mb-2';
+                li.innerHTML = `
+                    <a class="nav-link" href="#${key}" data-bs-toggle="collapse" aria-expanded="false">
+                        <i class="${section.icon}"></i> ${section.title}
+                    </a>
+                    <div class="collapse" id="${key}">
+                        <ul class="nav flex-column ms-3">
+                            ${section.items.map(item => `
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" data-path="${item.path}">${item.name}</a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+                return li;
+            },
+
+            setupEventListeners() {
+                document.querySelectorAll('.nav-link[data-path]').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const path = e.target.dataset.path;
+                        if (path) {
+                            this.handleNavigation(path);
+                            this.updateActiveLink(e.target);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.nav-link[data-bs-toggle="collapse"]').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        this.closeOtherSubmenus(e.target);
+                    });
+                });
+
+                document.getElementById('sidebarCollapse').addEventListener('click', () => {
+                    document.getElementById('sidebar').classList.toggle('active');
+                    document.getElementById('main-content').classList.toggle('active');
+                });
+            },
+
+            handleNavigation(path) {
+                contentManager.loadContent(path);
+                
+                if (window.innerWidth < 768) {
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.getElementById('main-content').classList.remove('active');
+                }
+            },
+
+            updateActiveLink(clickedLink) {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                if (!clickedLink.hasAttribute('data-bs-toggle')) {
+                    clickedLink.classList.add('active');
+                }
+            },
+
+            closeOtherSubmenus(clickedLink) {
+                const clickedSubmenu = document.querySelector(clickedLink.getAttribute('href'));
+                document.querySelectorAll('.collapse').forEach(submenu => {
+                    if (submenu !== clickedSubmenu && submenu.classList.contains('show')) {
+                        submenu.classList.remove('show');
+                    }
+                });
+            }
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            navigation.init();
+        });
+    </script>
+</body>
 </html>
+

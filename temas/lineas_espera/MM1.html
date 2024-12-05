@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Colas M/M/1</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Modelo de Colas M/M/1</h1>
+        <p class="text-center">Ingresa los valores de la tasa de llegada (λ) y la tasa de servicio (μ)</p>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form id="form">
+                    <div class="mb-3">
+                        <label for="lambda" class="form-label">Tasa de Llegada (λ)</label>
+                        <input type="number" class="form-control" id="lambda" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mu" class="form-label">Tasa de Servicio (μ)</label>
+                        <input type="number" class="form-control" id="mu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Calcular</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <h2>Resultados</h2>
+                <ul id="resolucion" class="list-group">
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("form").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const lambda = parseFloat(document.getElementById("lambda").value);
+            const mu = parseFloat(document.getElementById("mu").value);
+
+            if (mu <= lambda) {
+                alert("La tasa de servicio (μ) debe ser mayor que la tasa de llegada (λ).");
+                return;
+            }
+
+            const P0 = 1 - (lambda / mu);
+            const Lq = (Math.pow(lambda, 2) / (mu * (mu - lambda)));
+            const L = Lq + (lambda / mu);
+            const Wq = Lq / lambda;
+            const W = Wq + (1 / mu);
+            const Pw = lambda / mu;
+
+            const resultados = document.getElementById("resolucion");
+            resultados.innerHTML = `
+                <li class="list-group-item">Probabilidad de que no haya unidades en el sistema (P0): ${P0.toFixed(3)}</li>
+                <li class="list-group-item">Número promedio de unidades en la línea de espera (Lq): ${Lq.toFixed(3)}</li>
+                <li class="list-group-item">Número promedio de unidades en el sistema (L): ${L.toFixed(3)}</li>
+                <li class="list-group-item">Tiempo promedio en la línea de espera (Wq): ${Wq.toFixed(3)}</li>
+                <li class="list-group-item">Tiempo promedio en el sistema (W): ${W.toFixed(3)}</li>
+                <li class="list-group-item">Probabilidad de que una unidad no espere (Pw): ${Pw.toFixed(3)}</li>
+            `;
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Under Uncertainty Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+    <style>
+        .matrix-input input {
+            width: 60px;
+        }
+        .result-table th, .result-table td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Bajo Incertidumbre</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2>Definir dimension de la matriz</h2>
+                <div class="mb-3">
+                    <label for="alternatives" class="form-label">Número de alternativas:</label>
+                    <input type="number" id="alternatives" class="form-control" min="2" value="3">
+                </div>
+                <div class="mb-3">
+                    <label for="states" class="form-label">Número de Eventos:</label>
+                    <input type="number" id="states" class="form-control" min="2" value="3">
+                </div>
+                <button id="generate-matrix" class="btn btn-primary">Generar Matriz</button>
+            </div>
+        </div>
+
+        <div id="matrix-container" style="display: none;">
+            <h2>Ingresar datos de la matriz</h2>
+            <div id="matrix-inputs" class="mb-4"></div>
+            <div class="mb-3">
+                <label for="alpha" class="form-label">Coeficiente de optimismo (Hurwicz):</label>
+                <input type="number" id="alpha" class="form-control" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <button id="calculate" class="btn btn-success">Calcular</button>
+        </div>
+
+        <div id="results" class="mt-4" style="display: none;">
+            <h2>Resultados</h2>
+            <table class="table table-bordered result-table">
+                <thead>
+                    <tr>
+                        <th>Metodo</th>
+                        <th>Resultado</th>
+                        <th>Alternativa</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let matrix = [];
+
+        document.getElementById('generate-matrix').addEventListener('click', generateMatrix);
+        document.getElementById('calculate').addEventListener('click', calculateMethods);
+
+        function generateMatrix() {
+            const alternatives = parseInt(document.getElementById('alternatives').value);
+            const states = parseInt(document.getElementById('states').value);
+
+            if (alternatives < 2 || states < 2) {
+                alert('Ingrese almenos 2 alternativas');
+                return;
+            }
+
+            matrix = Array(alternatives).fill().map(() => Array(states).fill(0));
+
+            let html = '<table class="table table-bordered matrix-input">';
+            html += '<tr><th></th>' + Array(states).fill().map((_, i) => `<th>Evento ${i + 1}</th>`).join('') + '</tr>';
+
+            for (let i = 0; i < alternatives; i++) {
+                html += `<tr><th>A${i + 1}</th>`;
+                for (let j = 0; j < states; j++) {
+                    html += `<td><input type="number" id="cell-${i}-${j}" step="0.01"></td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+
+            document.getElementById('matrix-inputs').innerHTML = html;
+            document.getElementById('matrix-container').style.display = 'block';
+        }
+
+        function calculateMethods() {
+            const alternatives = matrix.length;
+            const states = matrix[0].length;
+
+            // Update matrix with input values
+            for (let i = 0; i < alternatives; i++) {
+                for (let j = 0; j < states; j++) {
+                    matrix[i][j] = parseFloat(document.getElementById(`cell-${i}-${j}`).value) || 0;
+                }
+            }
+
+            const alpha = parseFloat(document.getElementById('alpha').value);
+
+            const results = {
+                maximin: calculateMaximin(),
+                maximax: calculateMaximax(),
+                laplace: calculateLaplace(),
+                hurwicz: calculateHurwicz(alpha),
+                savage: calculateSavage()
+            };
+
+            displayResults(results);
+        }
+
+        function calculateMaximin() {
+            const minValues = matrix.map(row => Math.min(...row));
+            const maxValue = Math.max(...minValues);
+            const alternative = minValues.indexOf(maxValue);
+            return { method: 'Maximin', value: maxValue, alternative: alternative + 1 };
+        }
+
+        function calculateMaximax() {
+            const maxValues = matrix.map(row => Math.max(...row));
+            const maxValue = Math.max(...maxValues);
+            const alternative = maxValues.indexOf(maxValue);
+            return { method: 'Maximax', value: maxValue, alternative: alternative + 1 };
+        }
+
+        function calculateLaplace() {
+            const averages = matrix.map(row => row.reduce((a, b) => a + b) / row.length);
+            const maxValue = Math.max(...averages);
+            const alternative = averages.indexOf(maxValue);
+            return { method: 'Laplace', value: maxValue, alternative: alternative + 1 };
+        }
+
+        function calculateHurwicz(alpha) {
+            const hurwiczValues = matrix.map(row => alpha * Math.max(...row) + (1 - alpha) * Math.min(...row));
+            const maxValue = Math.max(...hurwiczValues);
+            const alternative = hurwiczValues.indexOf(maxValue);
+            return { method: 'Hurwicz', value: maxValue, alternative: alternative + 1 };
+        }
+
+        function calculateSavage() {
+            const maxValues = matrix[0].map((_, colIndex) => Math.max(...matrix.map(row => row[colIndex])));
+            const regretMatrix = matrix.map(row => row.map((value, colIndex) => maxValues[colIndex] - value));
+            const maxRegrets = regretMatrix.map(row => Math.max(...row));
+            const minRegret = Math.min(...maxRegrets);
+            const alternative = maxRegrets.indexOf(minRegret);
+            return { method: 'Savage', value: minRegret, alternative: alternative + 1 };
+        }
+
+        function displayResults(results) {
+            let html = '';
+            for (const [method, result] of Object.entries(results)) {
+                html += `
+                    <tr>
+                        <td>${result.method}</td>
+                        <td>${result.value.toFixed(2)}</td>
+                        <td>A${result.alternative}</td>
+                    </tr>
+                `;
+            }
+            document.getElementById('results-body').innerHTML = html;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

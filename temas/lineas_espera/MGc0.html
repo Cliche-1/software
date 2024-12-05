@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Colas M/G/K</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Modelo de Colas M/G/K</h1>
+        <p class="text-center">Ingresa los valores de la tasa de llegada (λ), la tasa de servicio (μ), el número de servidores (K), y el valor de j para calcular Pj</p>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form id="form">
+                    <div class="mb-3">
+                        <label for="lambda" class="form-label">Tasa de Llegada (λ)</label>
+                        <input type="number" class="form-control" id="lambda" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="mu" class="form-label">Tasa de Servicio (μ)</label>
+                        <input type="number" class="form-control" id="mu" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="canales" class="form-label">Número de canales (K)</label>
+                        <input type="number" class="form-control" id="canales" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="valorJ" class="form-label">Valor de j</label>
+                        <input type="number" class="form-control" id="valorJ" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Calcular</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-8">
+                <h2>Resultados</h2>
+                <ul id="resolucion" class="list-group">
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("form").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const lambda = parseFloat(document.getElementById("lambda").value);
+            const mu = parseFloat(document.getElementById("mu").value);
+            const k = parseInt(document.getElementById("canales").value);
+            const j = parseInt(document.getElementById("valorJ").value);
+
+            if (k <= 0 || mu <= 0 || lambda <= 0 || j < 0 || j > k) {
+                alert("Todos los valores deben ser positivos, y j debe estar entre 0 y K.");
+                return;
+            }
+
+            let denominador = 0;
+            for (let i = 0; i <= k; i++) {
+                denominador += Math.pow(lambda / mu, i) / factorial(i);
+            }
+            const normalizar = 1 / denominador;
+
+            const Pj = (Math.pow(lambda / mu, j) / factorial(j)) * normalizar;
+
+            const Pk = (Math.pow(lambda / mu, k) / factorial(k)) * normalizar;
+
+            const L = (lambda/mu)*(1-Pk)
+
+            const resultados = document.getElementById("resolucion");
+            resultados.innerHTML = `
+                <li class="list-group-item">Probabilidad de que exactamente ${j} servidores estén ocupados (Pj): ${Pj.toFixed(4)}</li>
+                <li class="list-group-item">Numero promedio de Unidades en el Sistema (L): ${L.toFixed(4)}</li>
+            `;
+        });
+
+        function factorial(n) {
+            return n <= 1 ? 1 : n * factorial(n - 1);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Inventario Probabilístico Básico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <style>
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Modelo de Inventario Probabilístico Básico</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="input_demanda_media" class="form-label">Demanda media anual:</label>
+                    <input type="number" id="input_demanda_media" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_desv_est_demanda" class="form-label">Desviación estándar de la demanda:</label>
+                    <input type="number" id="input_desv_est_demanda" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_tiempo_entrega_medio" class="form-label">Tiempo de entrega medio (días):</label>
+                    <input type="number" id="input_tiempo_entrega_medio" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_desv_est_tiempo_entrega" class="form-label">Desviación estándar del tiempo de entrega:</label>
+                    <input type="number" id="input_desv_est_tiempo_entrega" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_pedido" class="form-label">Costo por pedido:</label>
+                    <input type="number" id="input_costo_pedido" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_unidad" class="form-label">Costo por unidad:</label>
+                    <input type="number" id="input_costo_unidad" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_mantenimiento" class="form-label">Costo de mantenimiento (por unidad por año):</label>
+                    <input type="number" id="input_costo_mantenimiento" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_nivel_servicio" class="form-label">Nivel de servicio deseado (%):</label>
+                    <input type="number" id="input_nivel_servicio" class="form-control" min="0" max="100" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_dias_por_año" class="form-label">Días por año:</label>
+                    <input type="number" id="input_dias_por_año" class="form-control" min="1" max="366" value="365" required>
+                </div>
+                <button id="calcular_modelo_basico" class="btn btn-primary">Calcular Modelo Básico</button>
+            </div>
+            <div class="col-md-6">
+                <div id="resultados_basico" class="mt-4">
+                    <h3>Resultados:</h3>
+                    <p id="resultado_q_basico" class="result-text"></p>
+                    <p id="resultado_ss_basico" class="result-text"></p>
+                    <p id="resultado_rop_basico" class="result-text"></p>
+                    <p id="resultado_costo_basico" class="result-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('calcular_modelo_basico').addEventListener('click', calcularModeloBasico);
+
+        function calcularModeloBasico() {
+            const demandaMedia = parseFloat(document.getElementById('input_demanda_media').value);
+            const desvEstDemanda = parseFloat(document.getElementById('input_desv_est_demanda').value);
+            const tiempoEntregaMedio = parseFloat(document.getElementById('input_tiempo_entrega_medio').value);
+            const desvEstTiempoEntrega = parseFloat(document.getElementById('input_desv_est_tiempo_entrega').value);
+            const costoPedido = parseFloat(document.getElementById('input_costo_pedido').value);
+            const costoUnidad = parseFloat(document.getElementById('input_costo_unidad').value);
+            const costoMantenimiento = parseFloat(document.getElementById('input_costo_mantenimiento').value);
+            const nivelServicio = parseFloat(document.getElementById('input_nivel_servicio').value) / 100;
+            const diasPorAño = parseFloat(document.getElementById('input_dias_por_año').value);
+
+            const Q = Math.ceil(Math.sqrt((2 * demandaMedia * costoPedido) / costoMantenimiento));
+            const demandaTiempoEntrega = demandaMedia * (tiempoEntregaMedio / diasPorAño);
+            const desvEstDemandaTiempoEntrega = Math.sqrt(
+                (tiempoEntregaMedio / diasPorAño) * (desvEstDemanda ** 2) +
+                (demandaMedia / diasPorAño) ** 2 * (desvEstTiempoEntrega ** 2)
+            );
+            const z = jstat.normal.inv(nivelServicio, 0, 1);
+            const SS = z * desvEstDemandaTiempoEntrega;
+            const ROP = demandaTiempoEntrega + SS;
+            const costoMantenimientoAnual = costoMantenimiento * (Q / 2 + SS);
+            const costoPedidoAnual = (demandaMedia / Q) * costoPedido;
+            const costoTotal = costoMantenimientoAnual + costoPedidoAnual;
+
+            document.getElementById('resultado_q_basico').textContent = `Cantidad Económica de Pedido (Q): ${Q.toFixed(2)}`;
+            document.getElementById('resultado_ss_basico').textContent = `Stock de Seguridad (SS): ${SS.toFixed(2)}`;
+            document.getElementById('resultado_rop_basico').textContent = `Punto de Reorden (ROP): ${ROP.toFixed(2)}`;
+            document.getElementById('resultado_costo_basico').textContent = `Costo Total Esperado Anual: ${costoTotal.toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>

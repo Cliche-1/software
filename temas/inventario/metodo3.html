@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Inventario con Faltantes Planeados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-text {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Modelo de Inventario con Faltantes Planeados</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2>Ingrese los datos</h2>
+                <div class="mb-3">
+                    <label for="input_demanda" class="form-label">Demanda anual (D):</label>
+                    <input type="number" id="input_demanda" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_pedido" class="form-label">Costo de hacer un pedido (Co):</label>
+                    <input type="number" id="input_costo_pedido" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_mantenimiento" class="form-label">Costo de mantener inventario (Ch):</label>
+                    <input type="number" id="input_costo_mantenimiento" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="input_costo_faltantes" class="form-label">Costo de faltantes por unidad (Cb):</label>
+                    <input type="number" id="input_costo_faltantes" class="form-control" min="0" step="0.01" required>
+                </div>
+                <button id="calcular" class="btn btn-primary">Calcular</button>
+            </div>
+        </div>
+
+        <div id="resultados" class="mt-4">
+            <h2>Resultados</h2>
+            <p id="resultado_q" class="result-text"></p>
+            <p id="resultado_faltantes" class="result-text"></p>
+            <p id="resultado_inventario" class="result-text"></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('calcular').addEventListener('click', calcularEOQ);
+
+        function eoqFaltantes(D, S, H, P) {
+            const Q = Math.sqrt((2 * D * S * (H + P)) / (H * P));
+            const falPerm = (H * Q) / (P + H);
+            const InvMax = Q - falPerm;
+            return [Q, falPerm, InvMax];
+        }
+
+        function calcularEOQ() {
+            const D = parseFloat(document.getElementById('input_demanda').value);
+            const S = parseFloat(document.getElementById('input_costo_pedido').value);
+            const H = parseFloat(document.getElementById('input_costo_mantenimiento').value);
+            const P = parseFloat(document.getElementById('input_costo_faltantes').value);
+
+            const [Q, falPerm, InvMax] = eoqFaltantes(D, S, H, P);
+
+            document.getElementById('resultado_q').textContent = `Cantidad óptima a pedir (Q): ${Q.toFixed(2)} unidades`;
+            document.getElementById('resultado_faltantes').textContent = `Cantidad de faltantes permitida: ${falPerm.toFixed(2)} unidades`;
+            document.getElementById('resultado_inventario').textContent = `Inventario máximo: ${InvMax.toFixed(2)} unidades`;
+
+            document.getElementById('resultados').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

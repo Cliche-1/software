@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AHP Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .comparison-table input {
+            width: 60px;
+        }
+        .result-table th, .result-table td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Proceso de Jerarquía Analítica</h1>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2>Definir Cantidad de Criterios</h2>
+                <div class="mb-3">
+                    <label for="criteria" class="form-label">Criterios(Separado por comas):</label>
+                    <input type="text" id="criteria" class="form-control" placeholder="Costo, Tiempo, Calidad">
+                </div>
+                <div class="mb-3">
+                    <label for="alternatives" class="form-label">Alternativas(Separado por comas):</label>
+                    <input type="text" id="alternatives" class="form-control" placeholder="A, B, C">
+                </div>
+                <button id="generate-tables" class="btn btn-primary">Generar tabla</button>
+            </div>
+        </div>
+
+        <div id="comparison-tables"></div>
+        
+        <div id="results" class="mt-4" style="display: none;">
+            <h2>Resultados</h2>
+            <div id="criteria-weights"></div>
+            <div id="alternative-scores"></div>
+            <div id="final-ranking"></div>
+        </div>
+    </div>
+
+    <script>
+        let criteria = [];
+        let alternatives = [];
+
+        document.getElementById('generate-tables').addEventListener('click', function() {
+            criteria = document.getElementById('criteria').value.split(',').map(c => c.trim());
+            alternatives = document.getElementById('alternatives').value.split(',').map(a => a.trim());
+
+            if (criteria.length < 2 || alternatives.length < 2) {
+                alert('Please enter at least 2 criteria and 2 alternatives.');
+                return;
+            }
+
+            generateComparisonTables();
+        });
+
+        function generateComparisonTables() {
+            let tablesHtml = '<h2>Paso 2, Asignar pesos</h2>';
+            
+            // Criteria comparison table
+            tablesHtml += generateTable('criteria-comparison', 'Comparación de criterios', criteria, criteria);
+
+            // Alternative comparison tables for each criterion
+            criteria.forEach(criterion => {
+                tablesHtml += generateTable(`alternative-comparison-${criterion}`, `Comparación de alternativas para ${criterion}`, alternatives, alternatives);
+            });
+
+            tablesHtml += '<button id="calculate" class="btn btn-success mt-4">Calcular</button>';
+
+            document.getElementById('comparison-tables').innerHTML = tablesHtml;
+            document.getElementById('calculate').addEventListener('click', calculateResults);
+        }
+
+        function generateTable(id, title, rowItems, colItems) {
+            let tableHtml = `<h3>${title}</h3>`;
+            tableHtml += `<table id="${id}" class="table table-bordered comparison-table">`;
+            tableHtml += '<tr><th></th>' + colItems.map(item => `<th>${item}</th>`).join('') + '</tr>';
+            
+            rowItems.forEach((rowItem, i) => {
+                tableHtml += `<tr><th>${rowItem}</th>`;
+                colItems.forEach((colItem, j) => {
+                    if (i === j) {
+                        tableHtml += '<td>1</td>';
+                    } else if (i < j) {
+                        tableHtml += `<td><input type="number" min="1" max="9" step="1" value="1"></td>`;
+                    } else {
+                        tableHtml += '<td></td>';
+                    }
+                });
+                tableHtml += '</tr>';
+            });
+            
+            tableHtml += '</table>';
+            return tableHtml;
+        }
+
+        function calculateResults() {
+            const criteriaMatrix = getMatrixFromTable('criteria-comparison');
+            const criteriaWeights = calculatePriorities(criteriaMatrix);
+
+            const alternativeScores = criteria.map(criterion => {
+                const matrix = getMatrixFromTable(`alternative-comparison-${criterion}`);
+                return calculatePriorities(matrix);
+            });
+
+            const finalScores = alternatives.map((alt, i) => {
+                return criteriaWeights.reduce((sum, weight, j) => sum + weight * alternativeScores[j][i], 0);
+            });
+
+            displayResults(criteriaWeights, alternativeScores, finalScores);
+        }
+
+        function getMatrixFromTable(tableId) {
+            const table = document.getElementById(tableId);
+            const matrix = [];
+            const rows = table.querySelectorAll('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].querySelectorAll('td');
+                const row = [];
+                for (let j = 0; j < cells.length; j++) {
+                    if (i === j) {
+                        row.push(1);
+                    } else if (i < j) {
+                        const input = cells[j].querySelector('input');
+                        row.push(parseFloat(input.value));
+                    } else {
+                        const oppositeInput = rows[j].querySelectorAll('td')[i].querySelector('input');
+                        row.push(1 / parseFloat(oppositeInput.value));
+                    }
+                }
+                matrix.push(row);
+            }
+            return matrix;
+        }
+
+        function calculatePriorities(matrix) {
+            const n = matrix.length;
+            let eigenVector = new Array(n).fill(1);
+            
+            for (let i = 0; i < 100; i++) {  // Max 100 iterations
+                const newEigenVector = matrix.map(row => 
+                    row.reduce((sum, cell, j) => sum + cell * eigenVector[j], 0)
+                );
+                const sum = newEigenVector.reduce((a, b) => a + b, 0);
+                eigenVector = newEigenVector.map(v => v / sum);
+            }
+            
+            return eigenVector;
+        }
+
+        function displayResults(criteriaWeights, alternativeScores, finalScores) {
+            let html = '<h3>Criteria Weights</h3>';
+            html += generateResultTable(criteria, criteriaWeights);
+
+            html += '<h3>Alternative Scores for Each Criterion</h3>';
+            criteria.forEach((criterion, i) => {
+                html += `<h4>${criterion}</h4>`;
+                html += generateResultTable(alternatives, alternativeScores[i]);
+            });
+
+            html += '<h3>Final Ranking</h3>';
+            html += generateResultTable(alternatives, finalScores);
+
+            const rankedAlternatives = alternatives
+                .map((alt, i) => ({ name: alt, score: finalScores[i] }))
+                .sort((a, b) => b.score - a.score);
+
+            html += '<h4>Recommended Decision</h4>';
+            html += `<p>The best alternative is <strong>${rankedAlternatives[0].name}</strong> with a score of ${rankedAlternatives[0].score.toFixed(4)}.</p>`;
+
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function generateResultTable(items, scores) {
+            let html = '<table class="table table-bordered result-table">';
+            html += '<tr>' + items.map(item => `<th>${item}</th>`).join('') + '</tr>';
+            html += '<tr>' + scores.map(score => `<td>${score.toFixed(4)}</td>`).join('') + '</tr>';
+            html += '</table>';
+            return html;
+        }
+    </script>
+</body>
+</html>

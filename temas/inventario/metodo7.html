@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Punto de Reorden con Demanda Probabilística</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <style>
+        .result-box {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Modelo de Punto de Reorden con Demanda Probabilística</h1>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="demandaMedia" class="form-label">Demanda media anual:</label>
+                <input type="number" class="form-control" id="demandaMedia" step="0.01" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="desvEstDemanda" class="form-label">Desviación estándar de la demanda anual:</label>
+                <input type="number" class="form-control" id="desvEstDemanda" step="0.01" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="tiempoEntrega" class="form-label">Tiempo de entrega (días):</label>
+                <input type="number" class="form-control" id="tiempoEntrega" step="0.01" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="nivelServicio" class="form-label">Nivel de servicio deseado (%):</label>
+                <input type="number" class="form-control" id="nivelServicio" step="0.01" min="0" max="100" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="costoPedido" class="form-label">Costo por pedido:</label>
+                <input type="number" class="form-control" id="costoPedido" step="0.01" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="costoMantenimiento" class="form-label">Costo de mantenimiento (por unidad por año):</label>
+                <input type="number" class="form-control" id="costoMantenimiento" step="0.01" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="costoFaltante" class="form-label">Costo de faltante (por unidad):</label>
+                <input type="number" class="form-control" id="costoFaltante" step="0.01" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="diasPorAnio" class="form-label">Días por año:</label>
+                <input type="number" class="form-control" id="diasPorAnio" value="365" required>
+            </div>
+        </div>
+        <div class="text-center">
+            <button class="btn btn-primary" onclick="calcularPuntoReorden()">Calcular Punto de Reorden</button>
+        </div>
+        <div id="resultados" class="result-box mt-4" style="display: none;">
+            <h3 class="text-center mb-3">Resultados</h3>
+            <p><strong>Punto de Reorden (ROP):</strong> <span id="resultadoROP"></span></p>
+            <p><strong>Stock de Seguridad (SS):</strong> <span id="resultadoSS"></span></p>
+            <p><strong>Cantidad Económica de Pedido (EOQ):</strong> <span id="resultadoEOQ"></span></p>
+            <p><strong>Costo Total Esperado Anual:</strong> <span id="resultadoCosto"></span></p>
+        </div>
+    </div>
+
+    <script>
+        function calcularPuntoReorden() {
+            const demandaMedia = parseFloat(document.getElementById('demandaMedia').value);
+            const desvEstDemanda = parseFloat(document.getElementById('desvEstDemanda').value);
+            const tiempoEntrega = parseFloat(document.getElementById('tiempoEntrega').value);
+            const nivelServicio = parseFloat(document.getElementById('nivelServicio').value) / 100;
+            const costoPedido = parseFloat(document.getElementById('costoPedido').value);
+            const costoMantenimiento = parseFloat(document.getElementById('costoMantenimiento').value);
+            const costoFaltante = parseFloat(document.getElementById('costoFaltante').value);
+            const diasPorAnio = parseFloat(document.getElementById('diasPorAnio').value);
+
+            if (isNaN(demandaMedia) || isNaN(desvEstDemanda) || isNaN(tiempoEntrega) || isNaN(nivelServicio) ||
+                isNaN(costoPedido) || isNaN(costoMantenimiento) || isNaN(costoFaltante) || isNaN(diasPorAnio)) {
+                alert('Por favor, ingrese valores válidos en todos los campos.');
+                return;
+            }
+
+            const demandaTiempoEntrega = demandaMedia * (tiempoEntrega / diasPorAnio);
+            const desvEstTiempoEntrega = desvEstDemanda * Math.sqrt(tiempoEntrega / diasPorAnio);
+            const z = jstat.normal.inv(nivelServicio, 0, 1);
+            const SS = z * desvEstDemanda;
+            const ROP = demandaMedia / 52 + SS;
+            const EOQ = Math.sqrt((2 * demandaMedia * costoPedido) / costoMantenimiento);
+            const probFaltante = 1 - nivelServicio;
+            const E_S = desvEstTiempoEntrega * jstat.normal.pdf(z, 0, 1) - z * desvEstTiempoEntrega * probFaltante;
+            const costoMantenimientoAnual = costoMantenimiento * (EOQ / 2 + SS);
+            const costoPedidoAnual = (demandaMedia / EOQ) * costoPedido;
+            const costoFaltanteAnual = (demandaMedia / EOQ) * costoFaltante * E_S;
+            const costoTotal = costoMantenimientoAnual + costoPedidoAnual + costoFaltanteAnual;
+
+            document.getElementById('resultadoROP').textContent = ROP.toFixed(2);
+            document.getElementById('resultadoSS').textContent = SS.toFixed(2);
+            document.getElementById('resultadoEOQ').textContent = EOQ.toFixed(2);
+            document.getElementById('resultadoCosto').textContent = costoTotal.toFixed(2);
+
+            document.getElementById('resultados').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
