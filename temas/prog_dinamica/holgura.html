@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hit-and-Miss Manufacturing Company Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="hero">
+      <h1>Determinacion De Holgura</h1>
+  </div>
+    <div class="container">
+
+      <div class="form-group">
+        <label for="maxLotSize">Tamaño máximo del lote:</label>
+        <input type="number" id="maxLotSize" value="5" />
+      </div>
+      <div class="form-group">
+        <label for="maxRuns">Máximo de corridas:</label>
+        <input type="number" id="maxRuns" value="3" />
+      </div>
+      <div class="form-group">
+        <label for="successProb">Probabilidad de éxito por unidad:</label>
+        <input
+          type="number"
+          id="successProb"
+          value="0.5"
+          step="0.01"
+          min="0"
+          max="1"
+        />
+      </div>
+      <div class="form-group">
+        <label for="fixedCost">Costo fijo por corrida ($):</label>
+        <input type="number" id="fixedCost" value="300" />
+      </div>
+      <div class="form-group">
+        <label for="variableCost">Costo variable por unidad ($):</label>
+        <input type="number" id="variableCost" value="100" />
+      </div>
+      <div class="form-group">
+        <label for="failureCost">Costo por falla ($):</label>
+        <input type="number" id="failureCost" value="1600" />
+      </div>
+      <div class="form-group" hidden>
+        <label for="epsilon">Tolerancia: </label>
+        <input type="number" id="epsilon" value="0.01" step="0.001" />
+      </div>
+      <button onclick="handleCalculate()">Calcular</button>
+      <div id="results"></div>
+    </div>
+
+    <script>
+      function valueIteration(
+        states,
+        actions,
+        transitionProb,
+        cost,
+        gamma,
+        epsilon,
+        failureCost
+      ) {
+        let V = {};
+        let policy = {};
+        let iterations = [];
+
+        for (let s of states) {
+          V[s] = s === 0 ? failureCost : 0;
+          policy[s] = actions[0];
+        }
+
+        let iteration = 0;
+        while (true) {
+          iteration++;
+          let delta = 0;
+          let iterationV = { ...V };
+          let iterationPolicy = { ...policy };
+
+          for (let s of states) {
+            if (s === 0) continue;
+
+            let v = V[s];
+            let minCost = Infinity;
+            let bestAction = actions[0];
+
+            for (let a of actions) {
+              let expectedCost = cost[s][a];
+              for (let nextS of states) {
+                expectedCost +=
+                  gamma * (transitionProb[s][a][nextS] || 0) * V[nextS];
+              }
+              if (expectedCost < minCost) {
+                minCost = expectedCost;
+                bestAction = a;
+              }
+            }
+
+            iterationV[s] = minCost;
+            iterationPolicy[s] = bestAction;
+            delta = Math.max(delta, Math.abs(v - iterationV[s]));
+          }
+
+          iterations.push({
+            V: { ...iterationV },
+            policy: { ...iterationPolicy },
+          });
+          V = iterationV;
+          policy = iterationPolicy;
+
+          if (delta < epsilon) break;
+        }
+
+        return [policy, V, iterations];
+      }
+
+      function calculateProbabilities(lotSize, successProb) {
+        const pSuccess = 1 - Math.pow(1 - successProb, lotSize);
+        return [pSuccess, 1 - pSuccess];
+      }
+
+      function generateTransitionProb(states, actions, successProb) {
+        const transitionProb = {};
+        for (let s of states) {
+          transitionProb[s] = {};
+          for (let a of actions) {
+            const [pSuccess, pFailure] = calculateProbabilities(a, successProb);
+            transitionProb[s][a] = {
+              [Math.max(0, s - 1)]: pSuccess,
+              [s - 1]: pFailure,
+            };
+          }
+        }
+        return transitionProb;
+      }
+
+      function generateCost(states, actions, fixedCost, variableCost) {
+        const cost = {};
+        for (let s of states) {
+          cost[s] = {};
+          for (let a of actions) {
+            cost[s][a] = fixedCost + variableCost * a;
+          }
+        }
+        return cost;
+      }
+
+      function handleCalculate() {
+        const maxLotSize = parseInt(
+          document.getElementById('maxLotSize').value
+        );
+        const maxRuns = parseInt(document.getElementById('maxRuns').value);
+        const successProb = parseFloat(
+          document.getElementById('successProb').value
+        );
+        const fixedCost = parseInt(document.getElementById('fixedCost').value);
+        const variableCost = parseInt(
+          document.getElementById('variableCost').value
+        );
+        const failureCost = parseInt(
+          document.getElementById('failureCost').value
+        );
+        const epsilon = parseFloat(document.getElementById('epsilon').value);
+        const gamma = 1;
+        const states = Array.from(
+          { length: maxRuns + 1 },
+          (_, i) => maxRuns - i
+        );
+        const actions = Array.from({ length: maxLotSize }, (_, i) => i + 1);
+        const transitionProb = generateTransitionProb(
+          states,
+          actions,
+          successProb
+        );
+        const cost = generateCost(states, actions, fixedCost, variableCost);
+
+        const [policy, expectedCosts, iterations] = valueIteration(
+          states,
+          actions,
+          transitionProb,
+          cost,
+          gamma,
+          epsilon,
+          failureCost
+        );
+
+        displayResults(policy, expectedCosts, iterations);
+      }
+
+      function displayResults(policy, expectedCosts, iterations) {
+        let resultsHtml = `
+                <h2>Resultados</h2>
+                <h3>Resultado Final:</h3>
+                <table>
+                    <tr>
+                        <th>Corridas</th>
+                        <th>Tamaño del Lote</th>
+                        <th>Costo Esperado</th>
+                    </tr>
+                    ${Object.entries(policy)
+                      .map(
+                        ([state, action]) => `
+                        <tr>
+                            <td>${state}</td>
+                            <td>${action}</td>
+                            <td>$${expectedCosts[state].toFixed(2)}</td>
+                        </tr>
+                    `
+                      )
+                      .join('')}
+                </table>
+                <h3>Iteraciones:</h3>
+            `;
+
+        iterations.forEach((iteration, index) => {
+          resultsHtml += `
+                    <h4>Iteración ${index + 1}</h4>
+                    <table>
+                        <tr>
+                            <th>Corridas</th>
+                            <th>Tamaño del Lote</th>
+                            <th>Costo Esperado</th>
+                        </tr>
+                        ${Object.entries(iteration.policy)
+                          .map(
+                            ([state, action]) => `
+                            <tr>
+                                <td>${state}</td>
+                                <td>${action}</td>
+                                <td>$${iteration.V[state].toFixed(2)}</td>
+                            </tr>
+                        `
+                          )
+                          .join('')}
+                    </table>
+                `;
+        });
+
+        document.getElementById('results').innerHTML = resultsHtml;
+      }
+    </script>
+  </body>
+</html>

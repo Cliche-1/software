@@ -1,98 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimization Problem Solver</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        form {
-            display: grid;
-            gap: 10px;
-        }
-        input, button {
-            width: 100%;
-            padding: 5px;
-        }
-        #result {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <h1>Optimization Problem Solver</h1>
-    <form id="optimizationForm">
-        <h2>Objective Function: Maximize(ax₁ + bx₂ + cx₁² + dx₂²)</h2>
-        <input type="number" id="a" placeholder="a (coefficient of x₁)" required>
-        <input type="number" id="b" placeholder="b (coefficient of x₂)" required>
-        <input type="number" id="c" placeholder="c (coefficient of x₁²)" required>
-        <input type="number" id="d" placeholder="d (coefficient of x₂²)" required>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Optimización Lineal</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Programación Cuadrática </h1>
+    </header>
+    <div class="container">
+      <form id="optimization-form">
+        <h2>Función Objetivo</h2>
+        <label for="c1">Coeficiente de x1:</label>
+        <input type="number" id="c1" name="c1" required step="0.01" value="6" />
+        <label for="c2">Coeficiente de x2:</label>
+        <input type="number" id="c2" name="c2" required step="0.01" value="3" />
+        <label for="c1sq">Coeficiente de x1²:</label>
+        <input
+          type="number"
+          id="c1sq"
+          name="c1sq"
+          required
+          step="0.01"
+          value="2"
+        />
+        <label for="c2sq">Coeficiente de x2²:</label>
+        <input
+          type="number"
+          id="c2sq"
+          name="c2sq"
+          required
+          step="0.01"
+          value="3"
+        />
 
-        <h2>Constraints</h2>
-        <h3>x₁ + x₂ ≤ e</h3>
-        <input type="number" id="e" placeholder="e" required>
+        <h2>Restricciones</h2>
+        <label for="r1">x1 + x2 ≤</label>
+        <input type="number" id="r1" name="r1" required step="0.01" value="1" />
+        <label for="r2">2x1 + 3x2 ≤</label>
+        <input type="number" id="r2" name="r2" required step="0.01" value="4" />
 
-        <h3>fx₁ + gx₂ ≤ h</h3>
-        <input type="number" id="f" placeholder="f (coefficient of x₁)" required>
-        <input type="number" id="g" placeholder="g (coefficient of x₂)" required>
-        <input type="number" id="h" placeholder="h" required>
+        <button type="submit">Resolver</button>
+      </form>
+      <div class="output" id="output">
+        <p>
 
-        <button type="submit">Solve</button>
-    </form>
-    <div id="result"></div>
-
+        </p>
+      </div>
+    </div>
     <script>
-        document.getElementById('optimizationForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Get input values
-    const a = parseFloat(document.getElementById('a').value);
-    const b = parseFloat(document.getElementById('b').value);
-    const c = parseFloat(document.getElementById('c').value);
-    const d = parseFloat(document.getElementById('d').value);
-    const e = parseFloat(document.getElementById('e').value);
-    const f = parseFloat(document.getElementById('f').value);
-    const g = parseFloat(document.getElementById('g').value);
-    const h = parseFloat(document.getElementById('h').value);
+        document
+  .getElementById('optimization-form')
+  .addEventListener('submit', function (event) {
+    event.preventDefault();
 
-    // Define the objective function
-    function objective(x) {
-        return -(a * x[0] + b * x[1] + c * x[0]**2 + d * x[1]**2);
+    // Capturar los datos del formulario
+    const c1 = parseFloat(document.getElementById('c1').value);
+    const c2 = parseFloat(document.getElementById('c2').value);
+    const c1sq = parseFloat(document.getElementById('c1sq').value);
+    const c2sq = parseFloat(document.getElementById('c2sq').value);
+    const r1 = parseFloat(document.getElementById('r1').value);
+    const r2 = parseFloat(document.getElementById('r2').value);
+
+    // Función objetivo
+    function objetivo(x1, x2) {
+      return (
+        c1 * x1 + c2 * x2 - c1sq * Math.pow(x1, 2) - c2sq * Math.pow(x2, 2)
+      );
     }
 
-    // Define the constraints
-    function constraints(x) {
-        return [
-            e - x[0] - x[1],
-            h - f * x[0] - g * x[1],
-            x[0],
-            x[1]
-        ];
+    // Restricciones
+    function cumpleRestricciones(x1, x2) {
+      return x1 + x2 <= r1 && 2 * x1 + 3 * x2 <= r2 && x1 >= 0 && x2 >= 0;
     }
 
-    // Solve the optimization problem
-    const solution = numeric.uncmin(objective, [0, 0], constraints);
+    // Búsqueda de la solución óptima
+    let mejorZ = -Infinity;
+    let mejorX1 = 0;
+    let mejorX2 = 0;
 
-    // Extract results
-    const x1 = solution.solution[0];
-    const x2 = solution.solution[1];
-    const optimalValue = -objective([x1, x2]);
+    // Búsqueda de soluciones con una cuadrícula
+    const pasos = 100; // Precisión
+    for (let i = 0; i <= pasos; i++) {
+      for (let j = 0; j <= pasos; j++) {
+        let x1 = i / pasos;
+        let x2 = j / pasos;
+        if (cumpleRestricciones(x1, x2)) {
+          let z = objetivo(x1, x2);
+          if (z > mejorZ) {
+            mejorZ = z;
+            mejorX1 = x1;
+            mejorX2 = x2;
+          }
+        }
+      }
+    }
 
-    // Display results
-    document.getElementById('result').innerHTML = `
-        Valor óptimo de Z: ${optimalValue.toFixed(4)}<br>
-        Solución óptima (x₁, x₂): [${x1.toFixed(4)}, ${x2.toFixed(4)}]
-    `;
-});
-
+    // Mostrar resultados
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `
+      <p><strong>Valor óptimo de Z:</strong> ${mejorZ.toFixed(4)}</p>
+      <p><strong>Solución óptima (x1, x2):</strong> (${mejorX1.toFixed(
+        4
+      )}, ${mejorX2.toFixed(4)})</p>
+  `;
+  });
 
     </script>
-</body>
+  </body>
 </html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimización de Trabajadores</title>
+
+</head>
+<body>
+    
+    <div class="hero">
+        <h1>Optimización de Trabajadores</h1>
+    </div>
+    <form id="workerForm">
+        <label for="weeks">Número de semanas:</label>
+        <input type="number" id="weeks" min="1" required><br>
+        
+        <div id="requirements"></div>
+        
+        <label for="c1">Costo por exceso (C1):</label>
+        <input type="number" id="c1" min="0" required><br>
+        
+        <label for="c2Base">Costo fijo de contratación (C2 base):</label>
+        <input type="number" id="c2Base" min="0" required><br>
+        
+        <label for="c2Var">Costo variable de contratación (C2 variable):</label>
+        <input type="number" id="c2Var" min="0" required><br>
+        
+        <button type="button" onclick="calculateOptimization()">Calcular</button>
+    </form>
+    
+    <h2>Resultados</h2>
+    <div id="results"></div>
+
+    <script>
+        const maxWorkers = 10;
+
+        function createRequirementInputs() {
+            const weeks = parseInt(document.getElementById("weeks").value);
+            const requirementsDiv = document.getElementById("requirements");
+            requirementsDiv.innerHTML = "";
+
+            for (let i = 1; i <= weeks; i++) {
+                requirementsDiv.innerHTML += `
+                    <label for="req${i}">Requerimientos para la semana ${i}:</label>
+                    <input type="number" id="req${i}" min="0" required><br>
+                `;
+            }
+        }
+
+        document.getElementById("weeks").addEventListener("change", createRequirementInputs);
+
+        function calculateOptimization() {
+            const weeks = parseInt(document.getElementById("weeks").value);
+            const b = [];
+            for (let i = 1; i <= weeks; i++) {
+                b.push(parseInt(document.getElementById(`req${i}`).value));
+            }
+
+            const c1 = parseInt(document.getElementById("c1").value);
+            const c2Base = parseInt(document.getElementById("c2Base").value);
+            const c2Var = parseInt(document.getElementById("c2Var").value);
+
+            // Initialize DP table and path
+            const dp = Array.from({ length: weeks + 1 }, () => Array(maxWorkers + 1).fill(Infinity));
+            const path = Array.from({ length: weeks + 1 }, () => Array(maxWorkers + 1).fill(-1));
+
+            // Initialize DP table
+            for (let x = 0; x <= maxWorkers; x++) {
+                dp[weeks][x] = 0;
+            }
+
+            // Fill DP table
+            for (let i = weeks - 1; i >= 0; i--) {
+                for (let xPrev = 0; xPrev <= maxWorkers; xPrev++) {
+                    for (let xCurr = b[i]; xCurr <= maxWorkers; xCurr++) {
+                        const c1Cost = c1 * Math.max(0, xCurr - b[i]);
+                        const c2Cost = xCurr > xPrev ? c2Base + c2Var * (xCurr - xPrev) : 0;
+                        const cost = c1Cost + c2Cost + dp[i + 1][xCurr];
+
+                        if (cost < dp[i][xPrev]) {
+                            dp[i][xPrev] = cost;
+                            path[i][xPrev] = xCurr;
+                        }
+                    }
+                }
+            }
+
+            // Retrieve optimal assignment
+            let currentWorkers = 0;
+            const optimalAssignment = [];
+            for (let i = 0; i < weeks; i++) {
+                currentWorkers = path[i][currentWorkers];
+                optimalAssignment.push(currentWorkers);
+            }
+
+            // Display results
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "<strong>La solución óptima es:</strong><br>";
+            optimalAssignment.forEach((workers, i) => {
+                resultsDiv.innerHTML += `Semana ${i + 1}: ${workers} trabajadores<br>`;
+            });
+            resultsDiv.innerHTML += `<strong>Costo total:</strong> $${dp[0][0].toFixed(2)}`;
+        }
+    </script>
+</body>
+</html>
