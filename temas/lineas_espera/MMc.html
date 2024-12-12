@@ -55,11 +55,6 @@
     
         const p = lambda / (s * mu);
     
-        if (p >= 1) {
-            alert("Para que el sistema sea estable, λ debe ser menor que s * μ.");
-            return;
-        }
-    
         let P0_inv = 0;
         for (let n = 0; n < s; n++) {
             P0_inv += Math.pow(lambda / mu, n) / factorial(n);
@@ -72,7 +67,6 @@
         const L = Lq + (lambda / mu);
         const Wq = Lq / lambda;
         const W = Wq + (1 / mu);
-        const Pw = (Math.pow(lambda / mu, s) * P0) / (factorial(s) * (1 - p));
     
         const resultados = document.getElementById("resolucion");
         resultados.innerHTML = `
@@ -81,7 +75,7 @@
             <li class="list-group-item">Número promedio de unidades en el sistema (L): ${L.toFixed(4)}</li>
             <li class="list-group-item">Tiempo promedio en la línea de espera (Wq): ${Wq.toFixed(4)}</li>
             <li class="list-group-item">Tiempo promedio en el sistema (W): ${W.toFixed(4)}</li>
-            <li class="list-group-item">Probabilidad de que una unidad espere (Pw): ${Pw.toFixed(4)}</li>
+            <li class="list-group-item">Promedio de utilización en el sistema (P): ${p.toFixed(4)}</li>
         `;
     });
     

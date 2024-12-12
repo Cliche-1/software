@@ -39,11 +39,10 @@
                     <li class="list-group-item"><strong>Probabilidades estacionarias:</strong>
                         <div id="stateProbabilities"></div>
                     </li>
-                    <li class="list-group-item">Longitud promedio de la cola (Lq): <span id="lq"></span></li>
-                    <li class="list-group-item">Tiempo promedio en la cola (Wq): <span id="wq"></span> minutos</li>
-                    <li class="list-group-item">Número promedio en el sistema (L): <span id="l"></span></li>
-                    <li class="list-group-item">Tiempo promedio en el sistema (W): <span id="w"></span> minutos</li>
-                    <li class="list-group-item">Utilización del sistema (1 - P<sub>0</sub>): <span id="rho"></span></li>
+                    <li class="list-group-item">Longitud promedio de la cola (Lq): <span id="Lq"></span></li>
+                    <li class="list-group-item">Tiempo promedio en el sistema (W): <span id="W"></span> minutos</li>
+                    <li class="list-group-item">Número promedio en el sistema (L): <span id="L"></span></li>
+                    <li class="list-group-item">Utilización del sistema (1 - P<sub>0</sub>): <span id="U"></span></li>
                 </ul>
             </div>
         </div>
@@ -89,33 +88,31 @@
             const probabilities = ratios.map((ratio) => P0 * ratio);
 
             // Calcular longitud promedio de la cola
-            let Lq = 0;
+            let L = 0;
             for (let i = 1; i <= maxStates; i++) {
-                Lq += i * probabilities[i];
+                L += i * probabilities[i];
             }
 
             // Calcular métricas derivadas
-            const Wq = Lq / lambda; // Tiempo promedio en la cola
-            const L = Lq + rho; // Número promedio en el sistema
+            const Lq = L - (1 - probabilities[0]);
             const W = L / lambda; // Tiempo promedio en el sistema
-
+            const u = 1 - P0;
             // Actualizar resultados en el DOM
             document.getElementById('P0').innerText = P0.toFixed(4);
             const stateProbabilitiesContainer =
                 document.getElementById('stateProbabilities');
             stateProbabilitiesContainer.innerHTML = '';
-
+            
             probabilities.forEach((p, index) => {
                 const pElement = document.createElement('p');
                 pElement.innerText = `P(${index}) = ${p.toFixed(4)}`;
                 stateProbabilitiesContainer.appendChild(pElement);
             });
 
-            document.getElementById('lq').innerText = Lq.toFixed(4);
-            document.getElementById('wq').innerText = Wq.toFixed(4);
-            document.getElementById('l').innerText = L.toFixed(4);
-            document.getElementById('w').innerText = W.toFixed(4);
-            document.getElementById('rho').innerText = (1 - P0).toFixed(4);
+            document.getElementById('Lq').innerText = Lq.toFixed(4);
+            document.getElementById('W').innerText = W.toFixed(4);
+            document.getElementById('L').innerText = L.toFixed(4);
+            document.getElementById('U').innerText = u.toFixed(4);
 
             document.getElementById('results').classList.remove('hidden');
         });
